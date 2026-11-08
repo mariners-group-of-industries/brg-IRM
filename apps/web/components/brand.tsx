@@ -16,7 +16,7 @@ export function Brand({ className }: { className?: string }) {
     <div className={cn('flex items-center gap-2.5', className)}>
       <BrandMark />
       <div className="leading-tight">
-        <p className="text-sm font-semibold tracking-tight text-ink">IRM Platform</p>
+        <p className="text-sm font-semibold tracking-tight text-ink">BRG1 IRM</p>
         <p className="text-2xs text-ink-3">AGM / EGM</p>
       </div>
     </div>

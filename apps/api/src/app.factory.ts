@@ -35,7 +35,7 @@ export async function createApp(options: { logger?: boolean } = {}): Promise<Nes
 
   if (config.NODE_ENV !== 'production') {
     const doc = new DocumentBuilder()
-      .setTitle('IRM Platform API')
+      .setTitle('BRG1 IRM API')
       .setDescription('AGM/EGM management. Session cookie auth; send X-CSRF-Token on state-changing requests.')
       .setVersion('0.1.0')
       .addCookieAuth('irm_session')

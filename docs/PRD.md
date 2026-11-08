@@ -1,6 +1,6 @@
 # Product Requirements: AGM/EGM Management
 
-**Product:** IRM Platform, Module 1, AGM/EGM Management
+**Product:** BRG1 IRM, Module 1, AGM/EGM Management
 **Market:** Private, public unlisted and listed companies in Bangladesh, including corporate groups with several companies.
 **Status:** Phase A delivered. This document covers the full module.
 

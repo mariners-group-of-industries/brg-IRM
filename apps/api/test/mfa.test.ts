@@ -26,7 +26,7 @@ describe('staff two-step verification (TOTP)', () => {
   it('enrols with a QR code and confirms with a first code', async () => {
     const u = await login(app, email, 'Str0ng!Passphrase');
     const setup = await u.post('/auth/mfa/setup').expect(200);
-    expect(setup.body.otpauthUrl).toMatch(/^otpauth:\/\/totp\/IRM%20Platform/);
+    expect(setup.body.otpauthUrl).toMatch(/^otpauth:\/\/totp\/BRG1%20IRM/);
     expect(setup.body.qrDataUrl).toMatch(/^data:image\/png;base64,/);
     secret = setup.body.secret;
 

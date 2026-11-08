@@ -1,4 +1,4 @@
-# DESIGN.md: IRM Platform
+# DESIGN.md: BRG1 IRM
 
 The design system for every IRM surface: the admin console now, and later the shareholder meeting room, moderator queue and board view. Tokens live in `packages/ui/src/tokens.css`. Components live in `packages/ui/src/components`.
 

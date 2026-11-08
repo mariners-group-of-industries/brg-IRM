@@ -9,7 +9,7 @@ const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono'
 const bengali = Noto_Sans_Bengali({ subsets: ['bengali'], variable: '--font-bengali', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: { default: 'IRM · AGM/EGM', template: '%s · IRM' },
+  title: { default: 'BRG1 IRM · AGM/EGM', template: '%s · BRG1 IRM' },
   description: 'Digital AGM and EGM management for companies in Bangladesh.',
   robots: { index: false, follow: false },
 };

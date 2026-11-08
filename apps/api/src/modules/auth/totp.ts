@@ -55,7 +55,7 @@ export function verifyTotp(secret: string, code: string, lastStep: number | null
   return null;
 }
 
-export function otpauthUrl(secret: string, account: string, issuer = 'IRM Platform'): string {
+export function otpauthUrl(secret: string, account: string, issuer = 'BRG1 IRM'): string {
   const label = encodeURIComponent(`${issuer}:${account}`);
   return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=${DIGITS}&period=${STEP_SECONDS}`;
 }

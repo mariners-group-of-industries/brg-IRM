@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repository.
 
 ## Project
 
-IRM Platform, a modular monolith. The first module is AGM/EGM management for Bangladeshi companies. Read `docs/ROADMAP.md` to see which phase is current. Do not build modules outside the current phase.
+BRG1 IRM, a modular monolith. The first module is AGM/EGM management for Bangladeshi companies. Read `docs/ROADMAP.md` to see which phase is current. Do not build modules outside the current phase.
 
 ## Commands
 
