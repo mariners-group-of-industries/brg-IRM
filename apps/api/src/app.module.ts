@@ -27,6 +27,11 @@ import { StorageService } from './modules/storage/storage.service.js';
 import { MeetingsController } from './modules/meetings/meetings.controller.js';
 import { MeetingsService } from './modules/meetings/meetings.service.js';
 import { PortalMeetingsController } from './modules/participants/portal-meetings.controller.js';
+import { LiveController } from './modules/live/live.controller.js';
+import { PortalLiveController } from './modules/live/portal-live.controller.js';
+import { LiveService } from './modules/live/live.service.js';
+import { MeetingEventsService } from './modules/live/meeting-events.service.js';
+import { VideoService } from './modules/live/video.service.js';
 
 /**
  * Modular monolith root. Phase A wires the platform core. Later phases add
@@ -53,6 +58,8 @@ import { PortalMeetingsController } from './modules/participants/portal-meetings
     ParticipantAuthController,
     MeetingsController,
     PortalMeetingsController,
+    LiveController,
+    PortalLiveController,
   ],
   providers: [
     AuditService,
@@ -66,6 +73,9 @@ import { PortalMeetingsController } from './modules/participants/portal-meetings
     ImportsService,
     ParticipantAccessService,
     MeetingsService,
+    LiveService,
+    MeetingEventsService,
+    VideoService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

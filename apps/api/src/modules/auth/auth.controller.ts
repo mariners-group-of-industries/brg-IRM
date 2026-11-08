@@ -12,8 +12,8 @@ import { AuthService } from './auth.service.js';
 import { MfaService } from './mfa.service.js';
 import { SESSION_COOKIE, SessionService } from './session.service.js';
 
-/** Password sign-ins per minute per IP. Defaults to 10; raise only for local browser-test runs. */
-const LOGIN_LIMIT = process.env.NODE_ENV === 'test' ? 1000 : Number(process.env.LOGIN_RATE_LIMIT_PER_MINUTE ?? 10);
+/** Password sign-ins per minute per IP. Defaults to 15; raise only for local browser-test runs. */
+const LOGIN_LIMIT = process.env.NODE_ENV === 'test' ? 1000 : Number(process.env.LOGIN_RATE_LIMIT_PER_MINUTE ?? 15);
 const mfaStepSchema = mfaCodeSchema.extend({ mfaToken: z.string().min(20).max(200) });
 
 @ApiTags('auth')

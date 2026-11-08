@@ -156,8 +156,32 @@ export class AuthorizationsController {
       if (!['DRAFT', 'SCHEDULED', 'REGISTRATION_OPEN'].includes(meeting.state)) {
         throw new BadRequestException('Proxies can only be lodged for a meeting that has not started');
       }
-      if (!meetingRulesSchema.parse(meeting.rules).proxy.allowed) {
+      const rules = meetingRulesSchema.parse(meeting.rules);
+      if (!rules.proxy.allowed) {
         throw new BadRequestException('This meeting does not accept proxies');
+      }
+      if (rules.proxy.lodgementDeadlineHours > 0) {
+        const deadlineMs = meeting.scheduledStart.getTime() - rules.proxy.lodgementDeadlineHours * 3_600_000;
+        if (Date.now() > deadlineMs) {
+          throw new BadRequestException(
+            `Proxy lodgement closed ${rules.proxy.lodgementDeadlineHours} hours before the meeting`,
+          );
+        }
+      }
+      if (rules.proxy.maxPerProxy !== null) {
+        const held = await tx.proxyAuthorization.count({
+          where: {
+            companyId,
+            meetingId: meeting.id,
+            email: { equals: input.email, mode: 'insensitive' },
+            status: { in: ['PENDING', 'APPROVED'] },
+          },
+        });
+        if (held >= rules.proxy.maxPerProxy) {
+          throw new BadRequestException(
+            `A proxy representative may hold at most ${rules.proxy.maxPerProxy} appointment(s) for this meeting`,
+          );
+        }
       }
       const documentId = doc ? (await tx.storedFile.create({ data: { tenantId: s.tenantId, companyId, kind: 'AUTHORIZATION_DOCUMENT', uploadedById: p.userId, ...doc } })).id : null;
       const proxy = await tx.proxyAuthorization.create({

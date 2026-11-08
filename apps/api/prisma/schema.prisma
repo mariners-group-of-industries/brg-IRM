@@ -462,6 +462,7 @@ enum FileKind {
   REGISTER_IMPORT
   AUTHORIZATION_DOCUMENT
   MEETING_DOCUMENT
+  AUDIO_QUESTION
 }
 
 /// Metadata for a privately stored file. Content lives in the storage driver under storage_key.
@@ -649,30 +650,34 @@ enum MeetingState {
 }
 
 model Meeting {
-  id              String       @id @default(uuid(7)) @db.Uuid
-  tenantId        String       @map("tenant_id") @db.Uuid
-  companyId       String       @map("company_id") @db.Uuid
-  type            MeetingType
-  title           String       @db.VarChar(200)
-  description     String?      @db.VarChar(2000)
-  noticeText      String?      @map("notice_text")
-  mode            MeetingMode  @default(VIRTUAL)
-  venue           String?      @db.VarChar(300)
-  scheduledStart  DateTime     @map("scheduled_start") @db.Timestamptz(3)
-  timezone        String       @default("Asia/Dhaka") @db.VarChar(64)
-  recordDate      DateTime     @map("record_date") @db.Date
-  state           MeetingState @default(DRAFT)
+  id                 String       @id @default(uuid(7)) @db.Uuid
+  tenantId           String       @map("tenant_id") @db.Uuid
+  companyId          String       @map("company_id") @db.Uuid
+  type               MeetingType
+  title              String       @db.VarChar(200)
+  description        String?      @db.VarChar(2000)
+  noticeText         String?      @map("notice_text")
+  mode               MeetingMode  @default(VIRTUAL)
+  venue              String?      @db.VarChar(300)
+  scheduledStart     DateTime     @map("scheduled_start") @db.Timestamptz(3)
+  timezone           String       @default("Asia/Dhaka") @db.VarChar(64)
+  recordDate         DateTime     @map("record_date") @db.Date
+  state              MeetingState @default(DRAFT)
   /// Optimistic concurrency counter, incremented on every change.
-  version         Int          @default(1)
+  version            Int          @default(1)
   /// Validated against meetingRulesSchema in @irm/shared. Locked once the meeting goes live.
-  rules           Json
-  publishedAt     DateTime?    @map("published_at") @db.Timestamptz(3)
-  snapshotTakenAt DateTime?    @map("snapshot_taken_at") @db.Timestamptz(3)
-  startedAt       DateTime?    @map("started_at") @db.Timestamptz(3)
-  endedAt         DateTime?    @map("ended_at") @db.Timestamptz(3)
-  createdById     String       @map("created_by_id") @db.Uuid
-  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  rules              Json
+  publishedAt        DateTime?    @map("published_at") @db.Timestamptz(3)
+  snapshotTakenAt    DateTime?    @map("snapshot_taken_at") @db.Timestamptz(3)
+  /// The agenda item currently under discussion in the live meeting.
+  activeAgendaItemId String?      @map("active_agenda_item_id") @db.Uuid
+  /// Video provider room (for Zoom, the meeting number). Null uses the provider default.
+  videoRoomId        String?      @map("video_room_id") @db.VarChar(40)
+  startedAt          DateTime?    @map("started_at") @db.Timestamptz(3)
+  endedAt            DateTime?    @map("ended_at") @db.Timestamptz(3)
+  createdById        String       @map("created_by_id") @db.Uuid
+  createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   transitions  MeetingStateTransition[]
   agendaItems  AgendaItem[]
@@ -706,16 +711,19 @@ model MeetingStateTransition {
 }
 
 model AgendaItem {
-  id          String   @id @default(uuid(7)) @db.Uuid
-  tenantId    String   @map("tenant_id") @db.Uuid
-  companyId   String   @map("company_id") @db.Uuid
-  meetingId   String   @map("meeting_id") @db.Uuid
-  number      String   @db.VarChar(10)
-  title       String   @db.VarChar(300)
-  description String?  @db.VarChar(5000)
-  position    Int
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  meetingId      String   @map("meeting_id") @db.Uuid
+  number         String   @db.VarChar(10)
+  title          String   @db.VarChar(300)
+  description    String?  @db.VarChar(5000)
+  position       Int
+  proposalOpen   Boolean  @default(false) @map("proposal_open")
+  secondingOpen  Boolean  @default(false) @map("seconding_open")
+  pollDemandOpen Boolean  @default(false) @map("poll_demand_open")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   meeting    Meeting           @relation(fields: [meetingId], references: [id], onDelete: Restrict)
   resolution Resolution?
@@ -865,4 +873,158 @@ model MeetingParticipant {
   @@unique([meetingId, userId, kind, shareholderId])
   @@index([meetingId, status])
   @@map("meeting_participants")
+}
+
+// ═══ Phase D: live meeting ═════════════════════════════════════════════
+
+enum MotionKind {
+  PROPOSAL
+  SECONDING
+}
+
+enum MotionStatus {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+}
+
+/// A proposal or seconding of an agenda item's resolution.
+/// At most one ACCEPTED row per (agenda item, kind), enforced by a partial unique index.
+model Motion {
+  id            String          @id @default(uuid(7)) @db.Uuid
+  tenantId      String          @map("tenant_id") @db.Uuid
+  companyId     String          @map("company_id") @db.Uuid
+  meetingId     String          @map("meeting_id") @db.Uuid
+  agendaItemId  String          @map("agenda_item_id") @db.Uuid
+  kind          MotionKind
+  participantId String          @map("participant_id") @db.Uuid
+  userId        String          @map("user_id") @db.Uuid
+  shareholderId String          @map("shareholder_id") @db.Uuid
+  actingAs      ParticipantKind @map("acting_as")
+  status        MotionStatus
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  decidedAt     DateTime?       @map("decided_at") @db.Timestamptz(3)
+  decidedById   String?         @map("decided_by_id") @db.Uuid
+
+  @@unique([agendaItemId, kind, participantId])
+  @@index([meetingId, agendaItemId])
+  @@map("motions")
+}
+
+model PollDemand {
+  id            String          @id @default(uuid(7)) @db.Uuid
+  tenantId      String          @map("tenant_id") @db.Uuid
+  companyId     String          @map("company_id") @db.Uuid
+  meetingId     String          @map("meeting_id") @db.Uuid
+  agendaItemId  String          @map("agenda_item_id") @db.Uuid
+  participantId String          @map("participant_id") @db.Uuid
+  userId        String          @map("user_id") @db.Uuid
+  shareholderId String          @map("shareholder_id") @db.Uuid
+  actingAs      ParticipantKind @map("acting_as")
+  /// Votes of the registration at the time of the demand.
+  votes         BigInt
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([agendaItemId, participantId])
+  @@index([meetingId, agendaItemId])
+  @@map("poll_demands")
+}
+
+enum AttendanceRole {
+  PARTICIPANT
+  BOARD
+  MODERATOR
+  STAFF
+}
+
+/// One row per live connection. Closed when the connection ends or the API restarts.
+model MeetingAttendance {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  tenantId       String         @map("tenant_id") @db.Uuid
+  companyId      String         @map("company_id") @db.Uuid
+  meetingId      String         @map("meeting_id") @db.Uuid
+  userId         String         @map("user_id") @db.Uuid
+  role           AttendanceRole
+  /// Registrations this connection represents (participants only).
+  participantIds String[]       @map("participant_ids") @db.Uuid
+  joinedAt       DateTime       @default(now()) @map("joined_at") @db.Timestamptz(3)
+  leftAt         DateTime?      @map("left_at") @db.Timestamptz(3)
+  ipAddress      String?        @map("ip_address") @db.VarChar(64)
+  userAgent      String?        @map("user_agent") @db.VarChar(400)
+
+  @@index([meetingId, leftAt])
+  @@map("meeting_attendance")
+}
+
+enum QuestionKind {
+  TEXT
+  AUDIO
+}
+
+enum QuestionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FORWARDED
+}
+
+model MeetingQuestion {
+  id              String          @id @default(uuid(7)) @db.Uuid
+  tenantId        String          @map("tenant_id") @db.Uuid
+  companyId       String          @map("company_id") @db.Uuid
+  meetingId       String          @map("meeting_id") @db.Uuid
+  agendaItemId    String?         @map("agenda_item_id") @db.Uuid
+  participantId   String          @map("participant_id") @db.Uuid
+  userId          String          @map("user_id") @db.Uuid
+  shareholderId   String          @map("shareholder_id") @db.Uuid
+  actingAs        ParticipantKind @map("acting_as")
+  kind            QuestionKind
+  text            String?         @db.VarChar(2000)
+  fileId          String?         @map("file_id") @db.Uuid
+  durationSeconds Int?            @map("duration_seconds")
+  status          QuestionStatus  @default(PENDING)
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  actions ModerationAction[]
+
+  @@index([meetingId, status, createdAt])
+  @@map("meeting_questions")
+}
+
+enum ModerationActionKind {
+  APPROVE
+  REJECT
+  FORWARD
+}
+
+/// Append-only moderation history.
+model ModerationAction {
+  id          String               @id @default(uuid(7)) @db.Uuid
+  tenantId    String               @map("tenant_id") @db.Uuid
+  companyId   String               @map("company_id") @db.Uuid
+  questionId  String               @map("question_id") @db.Uuid
+  actorUserId String               @map("actor_user_id") @db.Uuid
+  action      ModerationActionKind
+  note        String?              @db.VarChar(500)
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  question MeetingQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@index([questionId])
+  @@map("moderation_actions")
+}
+
+model MeetingAnnouncement {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  companyId   String    @map("company_id") @db.Uuid
+  meetingId   String    @map("meeting_id") @db.Uuid
+  body        String    @db.VarChar(1000)
+  createdById String    @map("created_by_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  retractedAt DateTime? @map("retracted_at") @db.Timestamptz(3)
+
+  @@index([meetingId, createdAt])
+  @@map("meeting_announcements")
 }

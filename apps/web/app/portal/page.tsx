@@ -60,7 +60,7 @@ export default function PortalPage() {
         ) : (
           <>
             <h1 className="text-xl font-semibold tracking-tight text-ink">Welcome, {me.data?.user.fullName}</h1>
-            <p className="mt-1 text-ink-3">স্বাগতম। আপনার শেয়ারধারণ ও সভার তথ্য এখানে দেখুন।</p>
+            <p lang="bn" className="mt-1 text-base text-ink-3">স্বাগতম। আপনার শেয়ারধারণ ও সভার তথ্য এখানে দেখুন।</p>
 
             <Meetings />
 
@@ -150,7 +150,9 @@ function Meetings() {
                     <p className="font-medium text-ink">{m.title}</p>
                     <p className="text-sm text-ink-3 tabular">{formatDateTime(m.scheduledStart)} · {m.companyName}</p>
                   </div>
-                  {registered ? (
+                  {m.state === 'LIVE' ? (
+                    <Badge tone="success" dot>Live now</Badge>
+                  ) : registered ? (
                     <Badge tone="success" dot>Registered</Badge>
                   ) : m.registrationOpen ? (
                     <Badge tone="accent" dot>Registration open</Badge>

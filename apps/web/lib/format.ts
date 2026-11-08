@@ -89,6 +89,18 @@ const AUDIT_LABELS: Record<string, string> = {
   'meeting_document.publish': 'Meeting document published',
   'meeting_document.unpublish': 'Meeting document unpublished',
   'meeting_document.remove': 'Meeting document removed',
+  'meeting.video_room_set': 'Video room updated',
+  'agenda.set_active': 'Active agenda item changed',
+  'agenda.stage_toggle': 'Agenda stage toggled',
+  'motion.accept': 'Motion accepted',
+  'motion.submit': 'Motion submitted',
+  'motion.accept_staff': 'Motion accepted by chair',
+  'poll.demand': 'Poll demanded',
+  'question.submit': 'Written question submitted',
+  'question.submit_audio': 'Audio question submitted',
+  'question.moderate': 'Question moderated',
+  'meeting.announcement_create': 'Announcement published',
+  'meeting.announcement_retract': 'Announcement withdrawn',
 };
 export const auditLabel = (a: string) => AUDIT_LABELS[a] ?? a;
 

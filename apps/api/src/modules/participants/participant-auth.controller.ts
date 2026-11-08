@@ -40,7 +40,7 @@ import { ParticipantAccessService, type ParticipantSubject } from './participant
 export const OTP_SENT_MESSAGE =
   'If these details match our records, a 6-digit code has been sent to the mobile number or email registered for this account.';
 export const OTP_FAILED_MESSAGE = 'The code is incorrect or has expired. Request a new code and try again.';
-const MAX_CHALLENGES_PER_SUBJECT = 3;
+const MAX_CHALLENGES_PER_SUBJECT = process.env.NODE_ENV === 'development' ? 50 : 3;
 const SUBJECT_WINDOW_MS = 15 * 60_000;
 
 const hashCode = (challengeId: string, code: string) =>
@@ -71,7 +71,7 @@ export class ParticipantAuthController {
 
   @Public()
   @SkipCsrf()
-  @Throttle({ default: { limit: process.env.NODE_ENV === 'test' ? 1000 : 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: process.env.NODE_ENV === 'test' ? 1000 : 10, ttl: 60_000 } })
   @Post('participant/otp/request')
   @HttpCode(200)
   async request(@Body() body: unknown, @Meta() meta: RequestMeta): Promise<OtpRequestResponse> {

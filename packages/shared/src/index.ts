@@ -8,3 +8,5 @@ export * from './shareholder.js';
 export * from './shareholder-types.js';
 export * from './meeting.js';
 export * from './meeting-types.js';
+export * from './live.js';
+export * from './live-types.js';

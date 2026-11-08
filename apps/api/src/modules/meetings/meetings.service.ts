@@ -27,6 +27,7 @@ import type { AuthPrincipal, RequestMeta } from '../../common/request-context.js
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 import { AuditService } from '../audit/audit.service.js';
+import { MeetingEventsService } from '../live/meeting-events.service.js';
 
 type Tx = Prisma.TransactionClient;
 export interface Scope {
@@ -43,6 +44,7 @@ export class MeetingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly events: MeetingEventsService,
   ) {}
 
   // ─── Read ────────────────────────────────────────────────────────────
@@ -278,7 +280,7 @@ export class MeetingsService {
     input: { to: MeetingState; reason?: string; expectedVersion: number },
     meta: RequestMeta,
   ): Promise<MeetingDetail> {
-    return this.prisma.scoped(
+    const result = await this.prisma.scoped(
       [scope.companyId],
       async (tx) => {
         const m = await this.find(tx, scope, id);
@@ -320,6 +322,8 @@ export class MeetingsService {
       },
       { timeoutMs: 120_000 },
     );
+    this.events.emit(id, 'meeting.state', 'all', { state: result.state, version: result.version });
+    return result;
   }
 
   /**

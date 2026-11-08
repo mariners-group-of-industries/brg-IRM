@@ -8,11 +8,14 @@ import { CalendarClock, CheckCircle2, ChevronLeft, Download, FileText, MapPin, V
 import { MEETING_DOCUMENT_KIND_LABELS, type MeetingDocumentDto, type PortalMeeting } from '@irm/shared';
 import { Alert, Badge, Button, Panel, PanelHeader, Skeleton } from '@irm/ui';
 import { BrandMark } from '@/components/brand';
+import { MeetingStateBadge } from '@/components/status';
 import { api } from '@/lib/api';
 import { formatBytes, formatDate, formatDateTime, formatShares } from '@/lib/format';
+import { useMe } from '@/lib/session';
 
 /** One meeting as a shareholder or representative sees it: notice, agenda, documents and registration. */
 export default function PortalMeetingPage() {
+  useMe();
   const { mid } = useParams<{ mid: string }>();
   const qc = useQueryClient();
   const key = ['portal-meetings', mid];
@@ -52,7 +55,10 @@ export default function PortalMeetingPage() {
           <Alert tone="danger">{q.error.message}</Alert>
         ) : (
           <>
-            <h1 className="text-xl font-semibold tracking-tight text-ink">{q.data.title}</h1>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-xl font-semibold tracking-tight text-ink">{q.data.title}</h1>
+              <MeetingStateBadge state={q.data.state} />
+            </div>
             <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2">
               <span className="inline-flex items-center gap-1.5"><CalendarClock className="size-4 text-ink-3" aria-hidden /> <span className="tabular">{formatDateTime(q.data.scheduledStart)}</span> (Dhaka)</span>
               <span className="inline-flex items-center gap-1.5">
@@ -91,6 +97,23 @@ export default function PortalMeetingPage() {
               {!q.data.registrationOpen && q.data.state === 'SCHEDULED' && (
                 <p className="border-t border-line px-5 py-3 text-xs text-ink-3">Registration opens after the record date. You will be able to register here.</p>
               )}
+              {q.data.eligibility.some((e) => e.registered) &&
+                (q.data.state === 'REGISTRATION_OPEN' || q.data.state === 'LIVE' || q.data.state === 'PAUSED') && (
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line px-5 py-4">
+                    <p className="text-base text-ink-2">
+                      {q.data.state === 'LIVE'
+                        ? 'The meeting is live now. Join the room to watch and participate.'
+                        : q.data.state === 'PAUSED'
+                          ? 'The meeting is paused. You may wait inside the meeting room.'
+                          : 'You are registered. You may enter the room ahead of the scheduled start.'}
+                    </p>
+                    <Button asChild size="lg">
+                      <Link href={`/portal/meetings/${mid}/room`}>
+                        Enter meeting room · <span lang="bn">সভাকক্ষে প্রবেশ করুন</span>
+                      </Link>
+                    </Button>
+                  </div>
+                )}
             </Panel>
 
             <Panel className="mt-6">

@@ -24,6 +24,20 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const headers: Record<string, string> = { Accept: 'application/json' };
   const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
   if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
+  // A 401 from a sign-in step means wrong credentials or code, not an expired session:
+  // the caller shows the error instead of being sent to the staff sign-in page.
+  const signInStep = ['/auth/login', '/auth/mfa/verify', '/participant/otp/'].some((p) => path.startsWith(p));
+  if (method !== 'GET' && !csrfToken && !signInStep) {
+    const meRes = await fetch(`${BASE}/auth/me`, {
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin',
+      cache: 'no-store',
+    });
+    if (meRes.ok) {
+      const me = (await meRes.json()) as { csrfToken?: string };
+      if (me.csrfToken) csrfToken = me.csrfToken;
+    }
+  }
   if (method !== 'GET' && csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
   const res = await fetch(`${BASE}${path}`, {
@@ -34,9 +48,6 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     cache: 'no-store',
   });
 
-  // A 401 from a sign-in step means wrong credentials or code, not an expired session:
-  // the caller shows the error instead of being sent to the staff sign-in page.
-  const signInStep = ['/auth/login', '/auth/mfa/verify', '/participant/otp/'].some((p) => path.startsWith(p));
   if (res.status === 401 && typeof window !== 'undefined' && !signInStep) {
     const next = encodeURIComponent(window.location.pathname + window.location.search);
     // A full page load is intended here: it drops all cached query data from the expired session.

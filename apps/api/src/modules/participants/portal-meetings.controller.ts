@@ -202,12 +202,25 @@ export class PortalMeetingsController {
         const forThisMeeting = r.meetingId === m.id;
         if (!forThisMeeting) continue; // A proxy only ever applies to the meeting it was lodged for.
         const effective = isEffective(r);
-        const ents = snapshotTaken && effective && rules.proxy.allowed ? await entitlementsFor(r.grantorShareholderId) : [];
+        const alreadyRegisteredOtherProxies =
+          rules.proxy.maxPerProxy !== null
+            ? await tx.meetingParticipant.count({
+                where: {
+                  meetingId: m.id,
+                  userId,
+                  kind: 'PROXY_REPRESENTATIVE',
+                  status: 'REGISTERED',
+                  NOT: { shareholderId: r.grantorShareholderId },
+                },
+              })
+            : 0;
+        const overMax = rules.proxy.maxPerProxy !== null && alreadyRegisteredOtherProxies >= rules.proxy.maxPerProxy;
+        const ents = snapshotTaken && effective && rules.proxy.allowed && !overMax ? await entitlementsFor(r.grantorShareholderId) : [];
         out.push({
           key: `PROXY:${r.id}`, kind: 'PROXY_REPRESENTATIVE', label: r.scope === 'ATTEND_AND_VOTE' ? 'As proxy (attend and vote)' : 'As proxy (attend only)', shareholderId: r.grantorShareholderId, shareholderName: r.grantor.name, corporateRepId: null, proxyId: r.id,
           entitlementIds: ents.map((e) => e.id), votes: ents.reduce((a, e) => a + e.weight, 0n),
-          eligible: rules.proxy.allowed && effective && snapshotTaken && ents.length > 0,
-          reason: !rules.proxy.allowed ? 'This meeting does not accept proxies' : !effective ? 'The proxy is not active' : !snapshotTaken ? 'Registration has not opened' : ents.length === 0 ? noHolding : null,
+          eligible: rules.proxy.allowed && effective && !overMax && snapshotTaken && ents.length > 0,
+          reason: !rules.proxy.allowed ? 'This meeting does not accept proxies' : !effective ? 'The proxy is not active' : overMax ? `Maximum of ${rules.proxy.maxPerProxy} proxy registration(s) reached` : !snapshotTaken ? 'Registration has not opened' : ents.length === 0 ? noHolding : null,
         });
       }
     }

@@ -43,9 +43,14 @@ export default function JoinPage() {
             </div>
           </div>
           {company.isError ? (
-            <Alert tone="danger" title="This sign-in link is not valid">
-              Use the link in your meeting notice, or contact the company secretary.
-            </Alert>
+            <div className="space-y-4">
+              <Alert tone="danger" title="This sign-in link is not valid">
+                Use the link in your meeting notice, or contact the company secretary.
+              </Alert>
+              <Button variant="secondary" onClick={() => company.refetch()} className="w-full">
+                Retry
+              </Button>
+            </div>
           ) : company.data ? (
             <JoinFlow companyId={companyId} companyName={company.data.shortName} />
           ) : null}
@@ -69,6 +74,17 @@ function JoinFlow({ companyId, companyName }: { companyId: string; companyName: 
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [resendIn, setResendIn] = React.useState(0);
+
+  const devOutbox = useQuery({
+    queryKey: ['dev-outbox-latest'],
+    queryFn: () => api.get<Array<{ id: string; recipient: string; body: string }>>('/dev/outbox'),
+    enabled: !!challenge,
+    refetchInterval: 2000,
+    retry: false,
+  });
+
+  const latestDevMsg = devOutbox.data?.[0];
+  const devCode = latestDevMsg?.body.match(/\b\d{6}\b/)?.[0];
 
   React.useEffect(() => {
     if (resendIn <= 0) return;
@@ -119,7 +135,7 @@ function JoinFlow({ companyId, companyName }: { companyId: string; companyName: 
         <p className="mt-1 text-[0.9375rem] text-ink-2">{challenge.message}</p>
         <p className="mt-0.5 text-sm text-ink-3">কোডটি {Math.round(challenge.expiresInSeconds / 60)} মিনিটের মধ্যে ব্যবহার করুন।</p>
         {error && <Alert tone="danger" className="mt-4">{error}</Alert>}
-        <Field label="6-digit code · ৬ অঙ্কের কোড" htmlFor="otp" className="mt-5">
+        <Field label="6-digit code" htmlFor="otp" className="mt-5">
           <Input
             id="otp"
             value={code}
@@ -132,6 +148,27 @@ function JoinFlow({ companyId, companyName }: { companyId: string; companyName: 
             autoFocus
           />
         </Field>
+        {devCode && (
+          <div className="mt-3 rounded-md border border-warning/25 bg-warning-soft px-3.5 py-2.5 text-xs text-warning">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <span className="font-medium">Development outbox code:</span>{' '}
+                <span className="font-mono text-sm font-semibold">{devCode}</span>
+                {latestDevMsg?.recipient && (
+                  <span> ({latestDevMsg.recipient})</span>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setCode(devCode)}
+              >
+                Use code
+              </Button>
+            </div>
+          </div>
+        )}
         <Button type="submit" size="lg" className="mt-5 w-full" disabled={code.length !== 6} loading={busy}>
           Sign in to {companyName}
         </Button>
@@ -158,7 +195,7 @@ function JoinFlow({ companyId, companyName }: { companyId: string; companyName: 
     >
       <h1 className="text-lg font-semibold text-ink">Sign in</h1>
       <fieldset className="mt-4">
-        <legend className="mb-2 text-sm font-medium text-ink">I am signing in as · আমি লগইন করছি</legend>
+        <legend className="mb-2 text-sm font-medium text-ink">I am signing in as</legend>
         <div className="flex flex-col gap-2">
           {KINDS.map((k) => (
             <label
@@ -184,17 +221,17 @@ function JoinFlow({ companyId, companyName }: { companyId: string; companyName: 
       {error && <Alert tone="danger" className="mt-4">{error}</Alert>}
 
       {kind === 'SHAREHOLDER' ? (
-        <Field label="BO ID or folio number · বিও আইডি বা ফোলিও নম্বর" htmlFor="identifier" hint="16-digit BO ID, or the folio number on your share certificate" className="mt-5">
+        <Field label="BO ID or folio number" htmlFor="identifier" hint="16-digit BO ID, or the folio number on your share certificate" className="mt-5">
           <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="off" className="h-11 font-mono text-base" placeholder="1201 9500 0000 0000" />
         </Field>
       ) : (
-        <Field label="Email on your authorization · ইমেইল" htmlFor="email" hint="The email the company recorded when it approved you" className="mt-5">
+        <Field label="Email on your authorization" htmlFor="email" hint="The email the company recorded when it approved you" className="mt-5">
           <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" className="h-11 text-base" />
         </Field>
       )}
 
       <Button type="submit" size="lg" className="mt-5 w-full" loading={busy} disabled={kind === 'SHAREHOLDER' ? !identifier.trim() : !email.trim()}>
-        Send me a code · কোড পাঠান
+        Send me a code
       </Button>
     </form>
   );

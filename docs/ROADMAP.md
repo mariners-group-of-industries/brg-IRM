@@ -86,11 +86,42 @@ Known limits:
 - Proxy lodgement deadlines and per-proxy limits are stored in the rules but not yet enforced. Enforcement comes with Phase D registration and attendance.
 - Shareholders are not sent notice emails or SMS, because no provider is configured. They see published meetings in the portal.
 
-## Phase D: Live AGM experience (next)
+## Phase D: Live AGM experience (complete, 2026-11-08)
 
-The shareholder meeting room, the video provider adapter (Zoom, plus a labelled simulator), attendance, proposed, seconded and poll demand, text and audio questions, the moderator dashboard, the board view, and Socket.IO real-time.
+Delivered:
+- Video provider adapter: `ZoomProvider` (HS256 Zoom Meeting SDK JWT signing) and a clearly labelled `SimulatorProvider` for local development.
+- Live attendance tracking: room join, heartbeat, explicit leave, SSE disconnect cleanup, stale-session cleanup on API startup, online headcounts and represented share-vote weights.
+- Staff Live Console (`Live console` tab): attendance and vote-weight summary, Zoom meeting ID configuration, active agenda item selection, `Proposal` / `Seconding` / `Poll demand` stage toggles, chair acceptance in `COLLECT_ALL` mode, and live announcements.
+- Atomic proposals and seconding: partial unique index `motions_one_accepted` prevents concurrent race conditions; enforces `minHolding`, `excludeProposer` and proxy speaking rules.
+- Poll demand recording and configurable threshold evaluation (`ANY_MEMBER`, `MEMBERS_COUNT`, `VOTING_RIGHTS_PERCENT`), reported to the chair without hard-coded legal constants.
+- Written (English and Bangla) and audio (1–180 s, magic-byte validated WebM/OGG/MP4/WAV in private storage) question submission.
+- Moderator dashboard (`Moderation` tab): status and Bangla filters, inline audio playback, approve, reject (reason required), and forward to the board, with every action recorded in `moderation_actions` and the audit log.
+- Board room view (`Board view` tab): board video stage, attendance summary, accepted proposers and seconders, announcements, and live feed of forwarded written and audio questions.
+- Bilingual shareholder meeting room (`/portal/meetings/[mid]/room`): 16 px minimum body copy, 44 px primary buttons, capacity switcher for multi-entitlement holders/representatives, visible closed stages (`Not open yet`), written and `MediaRecorder` voice questions, and zero admin clutter.
+- Real-time pointer events over authenticated, meeting-scoped Server-Sent Events (`/live/events`), with clients refetching authoritative PostgreSQL state over REST.
+- Proxy governance rule enforcement (`proxy.lodgementDeadlineHours` and `proxy.maxPerProxy`).
 
-## Phase E: Secure voting
+| Acceptance criterion | Status | Evidence |
+|---|---|---|
+| Video simulator clearly labelled; Zoom SDK JWT signed and verified | Done | `live.test.ts`, `phase-d.spec.ts` (`Simulated video (development only)`) |
+| Concurrent proposals cannot both win | Done | `motions_one_accepted` partial unique index; `Promise.all` race returns `[200, 409]` in `live.test.ts` |
+| Poll demand threshold follows meeting configuration | Done | `live.test.ts` (`3%` voting-rights threshold crossed across two holders), `packages/shared/src/live.test.ts` |
+| Text (Bangla/English) and audio questions moderated and forwarded to board | Done | `live.test.ts` (text, Bangla, magic-byte audio upload, reject reason, board visibility), `phase-d.spec.ts` |
+| Cross-company and unregistered access blocked; RLS enforced on all Phase D tables | Done | `live.test.ts` (404 cross-tenant, 403 unregistered), `20261105150000_phase_d_live` RLS policies |
+| Responsive layout on desktop and mobile with no horizontal overflow | Done | `phase-d.spec.ts` on Desktop 1440 px and Pixel 7 (`expectNoHorizontalOverflow`) |
+
+Test totals: 34 shared unit tests, 97 API integration tests and 40 Playwright tests, on desktop and mobile.
+
+Fixed during Phase D:
+- Proxy lodgement deadlines (`proxy.lodgementDeadlineHours`) and per-proxy representation caps (`proxy.maxPerProxy`) from Phase C governance rules are now enforced during proxy creation/approval and meeting registration.
+- Direct navigation or page reload on deep shareholder portal routes (`/portal/meetings/[mid]` and `/portal/meetings/[mid]/room`) now hydrates the CSRF token automatically before state-changing requests.
+
+Known limits:
+- **Live Zoom account.** `ZoomProvider` signs standard Zoom Meeting SDK JWTs, but has not been tested against a live Zoom account here because credentials are not provisioned in local development.
+- **In-process event bus.** `MeetingEventsService` fans out SSE pointer events within one API process. Multi-instance deployments will need a Redis pub/sub bridge behind `MeetingEventsService` (PostgreSQL already holds all authoritative state).
+- **Ballot casting.** Voting sessions, ballot casting and weighted tallying are delivered next in Phase E.
+
+## Phase E: Secure voting (next)
 
 Entitlements, voting sessions, ballot casting with idempotency, weighted tally, hash-chained vote audit, results release, and privileged access grants. The required test list is in `VOTING_RULES.md`.
 

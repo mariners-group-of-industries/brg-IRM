@@ -8,6 +8,7 @@ export const USERS = {
   meghnaAdmin: 'cs@marinersventures.example',
   moderator: 'moderator@marinersventures.example',
   meetingAdmin: 'meeting.admin@marinersventures.example',
+  director: 'director@marinersventures.example',
   padmaAdmin: 'cs@padmapharma.example',
 } as const;
 

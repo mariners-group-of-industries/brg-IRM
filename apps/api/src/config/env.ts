@@ -29,6 +29,10 @@ const envSchema = z.object({
     .refine((v) => Buffer.from(v, 'base64').length === 32, 'MFA_ENCRYPTION_KEY must be 32 bytes, base64-encoded'),
   /** When true, platform and company admins must enrol in MFA before using the app. */
   MFA_ENFORCE_FOR_ADMINS: bool,
+  /** simulator: labelled development stand-in. zoom: Meeting SDK credentials signed server-side. */
+  VIDEO_PROVIDER: z.enum(['simulator', 'zoom']).default('simulator'),
+  ZOOM_SDK_KEY: z.string().optional(),
+  ZOOM_SDK_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -45,6 +49,12 @@ export function env(): Env {
   }
   if (parsed.data.NODE_ENV === 'production' && !parsed.data.COOKIE_SECURE) {
     throw new Error('COOKIE_SECURE must be true in production');
+  }
+  if (parsed.data.NODE_ENV === 'production' && parsed.data.VIDEO_PROVIDER === 'simulator') {
+    throw new Error('VIDEO_PROVIDER=simulator is not allowed in production. Configure a real video provider.');
+  }
+  if (parsed.data.VIDEO_PROVIDER === 'zoom' && (!parsed.data.ZOOM_SDK_KEY || !parsed.data.ZOOM_SDK_SECRET)) {
+    throw new Error('VIDEO_PROVIDER=zoom needs ZOOM_SDK_KEY and ZOOM_SDK_SECRET');
   }
   if (parsed.data.NODE_ENV === 'production' && parsed.data.OTP_DELIVERY === 'dev-outbox') {
     throw new Error('OTP_DELIVERY=dev-outbox is not allowed in production. Configure an SMS or email provider.');
