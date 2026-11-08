@@ -64,7 +64,7 @@ Delivered:
 - A record-date snapshot taken when registration opens. Voting entitlements are created from it, and both are immutable.
 - Participant registration by shareholders, corporate representatives and proxies, with eligibility explained.
 - Proxies are now linked to a real meeting. A proxy gives no rights at any other meeting.
-- A control center for staff, and meetings in the shareholder portal with Bangla labels.
+- A control center for staff, and meetings in the shareholder portal.
 
 | Acceptance criterion | Status | Evidence |
 |---|---|---|
@@ -97,7 +97,7 @@ Delivered:
 - Written (English and Bangla) and audio (1–180 s, magic-byte validated WebM/OGG/MP4/WAV in private storage) question submission.
 - Moderator dashboard (`Moderation` tab): status and Bangla filters, inline audio playback, approve, reject (reason required), and forward to the board, with every action recorded in `moderation_actions` and the audit log.
 - Board room view (`Board view` tab): board video stage, attendance summary, accepted proposers and seconders, announcements, and live feed of forwarded written and audio questions.
-- Bilingual shareholder meeting room (`/portal/meetings/[mid]/room`): 16 px minimum body copy, 44 px primary buttons, capacity switcher for multi-entitlement holders/representatives, visible closed stages (`Not open yet`), written and `MediaRecorder` voice questions, and zero admin clutter.
+- English-only shareholder meeting room (`/portal/meetings/[mid]/room`): 16 px minimum body copy, 44 px primary buttons, capacity switcher for multi-entitlement holders/representatives, visible closed stages (`Not open yet`), written and `MediaRecorder` voice questions, and zero admin clutter. (Converted all website UI copy to full English after Phase D.)
 - Real-time pointer events over authenticated, meeting-scoped Server-Sent Events (`/live/events`), with clients refetching authoritative PostgreSQL state over REST.
 - Proxy governance rule enforcement (`proxy.lodgementDeadlineHours` and `proxy.maxPerProxy`).
 

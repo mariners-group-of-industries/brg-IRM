@@ -9,10 +9,10 @@ import { Alert, Button, Field, Input, Skeleton, cn } from '@irm/ui';
 import { BrandMark } from '@/components/brand';
 import { api, ApiError, setCsrfToken } from '@/lib/api';
 
-const KINDS: { kind: ParticipantKind; title: string; bn: string; icon: React.ElementType; hint: string }[] = [
-  { kind: 'SHAREHOLDER', title: 'Shareholder', bn: 'শেয়ারহোল্ডার', icon: User, hint: 'Sign in with your BO ID or folio number' },
-  { kind: 'CORPORATE_REPRESENTATIVE', title: 'Company representative', bn: 'প্রতিষ্ঠানের প্রতিনিধি', icon: Building2, hint: 'For an authorised representative of a corporate shareholder' },
-  { kind: 'PROXY_REPRESENTATIVE', title: 'Proxy', bn: 'প্রক্সি', icon: UserCheck, hint: 'For a person appointed as proxy by a shareholder' },
+const KINDS: { kind: ParticipantKind; title: string; icon: React.ElementType; hint: string }[] = [
+  { kind: 'SHAREHOLDER', title: 'Shareholder', icon: User, hint: 'Sign in with your BO ID or folio number' },
+  { kind: 'CORPORATE_REPRESENTATIVE', title: 'Company representative', icon: Building2, hint: 'For an authorised representative of a corporate shareholder' },
+  { kind: 'PROXY_REPRESENTATIVE', title: 'Proxy', icon: UserCheck, hint: 'For a person appointed as proxy by a shareholder' },
 ];
 
 export default function JoinPage() {
@@ -35,7 +35,7 @@ export default function JoinPage() {
               ) : company.data ? (
                 <>
                   <p className="truncate text-base font-semibold text-ink">{company.data.legalName}</p>
-                  <p className="text-sm text-ink-3">Shareholder sign-in · শেয়ারহোল্ডার লগইন</p>
+                  <p className="text-sm text-ink-3">Shareholder sign-in</p>
                 </>
               ) : (
                 <p className="text-base font-semibold text-ink">Shareholder sign-in</p>
@@ -133,7 +133,7 @@ function JoinFlow({ companyId, companyName }: { companyId: string; companyName: 
       <form onSubmit={verify} noValidate className="rounded-xl border border-line bg-surface p-6 shadow-xs">
         <h1 className="text-lg font-semibold text-ink">Enter your code</h1>
         <p className="mt-1 text-[0.9375rem] text-ink-2">{challenge.message}</p>
-        <p className="mt-0.5 text-sm text-ink-3">কোডটি {Math.round(challenge.expiresInSeconds / 60)} মিনিটের মধ্যে ব্যবহার করুন।</p>
+        <p className="mt-0.5 text-sm text-ink-3">Use this code within {Math.round(challenge.expiresInSeconds / 60)} minutes.</p>
         {error && <Alert tone="danger" className="mt-4">{error}</Alert>}
         <Field label="6-digit code" htmlFor="otp" className="mt-5">
           <Input
@@ -208,9 +208,7 @@ function JoinFlow({ companyId, companyName }: { companyId: string; companyName: 
               <input type="radio" name="kind" className="sr-only" checked={kind === k.kind} onChange={() => (setKind(k.kind), setError(null))} />
               <k.icon className={cn('size-5 shrink-0', kind === k.kind ? 'text-accent' : 'text-ink-3')} aria-hidden />
               <span className="min-w-0">
-                <span className="block text-[0.9375rem] font-medium text-ink">
-                  {k.title} <span className="font-normal text-ink-3">· {k.bn}</span>
-                </span>
+                <span className="block text-[0.9375rem] font-medium text-ink">{k.title}</span>
                 <span className="block text-[0.8125rem] text-ink-3">{k.hint}</span>
               </span>
             </label>

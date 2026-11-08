@@ -96,7 +96,7 @@ function DetailsForm() {
           <Field label="Short description" htmlFor="description" optional>
             <Input id="description" name="description" defaultValue={m.description ?? ''} />
           </Field>
-          <Field label="Notice of meeting" htmlFor="noticeText" hint="The full notice text, as sent to members. Bangla is supported." error={err('noticeText')}>
+          <Field label="Notice of meeting" htmlFor="noticeText" hint="The full notice text, as sent to members." error={err('noticeText')}>
             <Textarea id="noticeText" name="noticeText" rows={12} defaultValue={m.noticeText ?? ''} className="leading-relaxed" />
           </Field>
         </fieldset>

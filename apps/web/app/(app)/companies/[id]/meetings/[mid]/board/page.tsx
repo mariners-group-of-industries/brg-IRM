@@ -118,11 +118,7 @@ export default function MeetingBoardRoomPage() {
                             Item {q.agendaItem.number}: {q.agendaItem.title}
                           </Badge>
                         )}
-                        {q.bangla && (
-                          <Badge tone="info" lang="bn">
-                            বাংলা
-                          </Badge>
-                        )}
+                        {q.bangla && <Badge tone="info">Bangla</Badge>}
                         {q.kind === 'AUDIO' && (
                           <Badge tone="accent">Audio · {q.durationSeconds ?? 0}s</Badge>
                         )}

@@ -108,7 +108,6 @@ export default function ShareholdersPage() {
                     >
                       {s.name}
                     </Link>
-                    {s.nameBn && <p className="text-xs text-ink-3">{s.nameBn}</p>}
                   </TD>
                   <TD className="hidden md:table-cell">
                     <ul className="flex flex-col gap-0.5">

@@ -168,11 +168,7 @@ export default function MeetingModerationPage() {
                         {item.kind === 'AUDIO' && (
                           <Badge tone="accent">Audio · {item.durationSeconds ?? 0}s</Badge>
                         )}
-                        {item.bangla && (
-                          <Badge tone="info" lang="bn">
-                            বাংলা
-                          </Badge>
-                        )}
+                        {item.bangla && <Badge tone="info">Bangla</Badge>}
                         {item.agendaItem && (
                           <Badge tone="neutral">
                             Item {item.agendaItem.number}: {item.agendaItem.title}

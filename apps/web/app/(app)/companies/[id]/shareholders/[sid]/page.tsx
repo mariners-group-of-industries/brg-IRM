@@ -30,7 +30,6 @@ export default function ShareholderPage() {
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-ink">{s.name}</h2>
-          {s.nameBn && <p className="text-sm text-ink-3">{s.nameBn}</p>}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {s.type === 'CORPORATE' ? <Badge tone="info">Corporate</Badge> : <Badge>Individual</Badge>}
             {!s.piiVisible && (

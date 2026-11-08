@@ -60,7 +60,7 @@ export default function PortalPage() {
         ) : (
           <>
             <h1 className="text-xl font-semibold tracking-tight text-ink">Welcome, {me.data?.user.fullName}</h1>
-            <p lang="bn" className="mt-1 text-base text-ink-3">স্বাগতম। আপনার শেয়ারধারণ ও সভার তথ্য এখানে দেখুন।</p>
+            <p className="mt-1 text-base text-ink-3">View your shareholdings and meeting schedule below.</p>
 
             <Meetings />
 
@@ -99,7 +99,7 @@ function Representation({ r }: { r: ParticipantRepresentation }) {
           {r.validUntil && <p className="text-sm text-ink-3">Valid until {formatDate(r.validUntil)}</p>}
         </div>
         <div className="text-right">
-          <p className="text-xs text-ink-3">Total shares · মোট শেয়ার</p>
+          <p className="text-xs text-ink-3">Total shares</p>
           <p className="text-2xl font-semibold tracking-tight text-ink tabular">{formatShares(r.totalShares)}</p>
         </div>
       </div>
@@ -123,7 +123,7 @@ function Meetings() {
   const q = useQuery({ queryKey: ['portal-meetings'], queryFn: () => api.get<PortalMeeting[]>('/participant/meetings') });
   return (
     <section className="mt-6" aria-labelledby="meetings-heading">
-      <h2 id="meetings-heading" className="mb-3 text-sm font-medium text-ink-3">Meetings · সভা</h2>
+      <h2 id="meetings-heading" className="mb-3 text-sm font-medium text-ink-3">Meetings</h2>
       {q.isPending ? (
         <Skeleton className="h-20" />
       ) : q.isError ? (

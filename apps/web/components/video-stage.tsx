@@ -38,7 +38,7 @@ export function VideoStage({
     <Panel>
       <PanelHeader
         className="flex-wrap"
-        title={shareholderFacing ? 'Live broadcast · সরাসরি সম্প্রচার' : 'Video broadcast'}
+        title={shareholderFacing ? 'Live broadcast' : 'Video broadcast'}
         description={
           video?.simulated
             ? 'Development simulator active'

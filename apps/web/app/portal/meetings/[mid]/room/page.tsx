@@ -189,7 +189,7 @@ export default function ShareholderMeetingRoomPage() {
           </div>
 
           <Button variant="secondary" size="lg" onClick={leaveRoom}>
-            <LogOut aria-hidden /> Leave room · <span lang="bn">প্রস্থান</span>
+            <LogOut aria-hidden /> Leave room
           </Button>
         </div>
       </header>
@@ -199,7 +199,7 @@ export default function ShareholderMeetingRoomPage() {
           <Panel className="mb-6">
             <div className="px-5 py-4">
               <Field
-                label="Acting as · অংশগ্রহণের পরিচয়"
+                label="Acting as"
                 htmlFor="capacity-select"
                 hint="Choose which registered shareholding or representation you are acting for."
               >
@@ -239,13 +239,7 @@ export default function ShareholderMeetingRoomPage() {
 
             {room.announcements.length > 0 && (
               <Panel>
-                <PanelHeader
-                  title={
-                    <>
-                      Announcements · <span lang="bn">ঘোষণা</span>
-                    </>
-                  }
-                />
+                <PanelHeader title="Announcements" />
                 <ul className="divide-y divide-line">
                   {room.announcements.map((a) => (
                     <li key={a.id} className="px-5 py-4">
@@ -258,13 +252,7 @@ export default function ShareholderMeetingRoomPage() {
             )}
 
             <Panel>
-              <PanelHeader
-                title={
-                  <>
-                    Agenda · <span lang="bn">আলোচ্যসূচি</span>
-                  </>
-                }
-              />
+              <PanelHeader title="Agenda" />
               <ol className="divide-y divide-line">
                 {room.agenda.map((a) => {
                   const current = room.activeAgendaItemId === a.id;
@@ -278,7 +266,7 @@ export default function ShareholderMeetingRoomPage() {
                           <p className="text-base font-medium text-ink">{a.title}</p>
                           {current && (
                             <Badge tone="accent" dot>
-                              <Radio className="size-3" aria-hidden /> Current item · <span lang="bn">চলমান</span>
+                              <Radio className="size-3" aria-hidden /> Current item
                             </Badge>
                           )}
                         </div>
@@ -324,11 +312,7 @@ export default function ShareholderMeetingRoomPage() {
           <div className="flex flex-col gap-6">
             <Panel>
               <PanelHeader
-                title={
-                  <>
-                    Current item · <span lang="bn">প্রস্তাব ও সমর্থন</span>
-                  </>
-                }
+                title="Current item"
                 description={
                   activeItem
                     ? `Item ${activeItem.number}: ${activeItem.title}`
@@ -343,15 +327,15 @@ export default function ShareholderMeetingRoomPage() {
                   </p>
                   <div className="flex flex-col gap-3 px-5 py-4">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-base font-medium text-ink">Proposal · <span lang="bn">প্রস্তাব</span></span>
+                      <span className="text-base font-medium text-ink">Proposal</span>
                       <Badge tone="neutral">Not open yet</Badge>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-base font-medium text-ink">Seconding · <span lang="bn">সমর্থন</span></span>
+                      <span className="text-base font-medium text-ink">Seconding</span>
                       <Badge tone="neutral">Not open yet</Badge>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-base font-medium text-ink">Poll demand · <span lang="bn">পোল দাবি</span></span>
+                      <span className="text-base font-medium text-ink">Poll demand</span>
                       <Badge tone="neutral">Not open yet</Badge>
                     </div>
                   </div>
@@ -365,9 +349,7 @@ export default function ShareholderMeetingRoomPage() {
                   {activeItem.resolution.requiresProposal && (
                     <MotionStageRow
                       title="Proposal"
-                      banglaTitle="প্রস্তাব"
                       buttonLabel="Propose resolution"
-                      banglaButtonLabel="প্রস্তাব করুন"
                       stageOpen={isLive && activeItem.stages.PROPOSAL}
                       accepted={activeItem.accepted.PROPOSAL}
                       myMotion={
@@ -388,9 +370,7 @@ export default function ShareholderMeetingRoomPage() {
                   {activeItem.resolution.requiresSeconding && (
                     <MotionStageRow
                       title="Seconding"
-                      banglaTitle="সমর্থন"
                       buttonLabel="Second resolution"
-                      banglaButtonLabel="সমর্থন করুন"
                       stageOpen={isLive && activeItem.stages.SECONDING}
                       accepted={activeItem.accepted.SECONDING}
                       myMotion={
@@ -410,9 +390,7 @@ export default function ShareholderMeetingRoomPage() {
 
                   <div className="px-5 py-4">
                     <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-base font-medium text-ink">
-                        Poll demand · <span lang="bn">পোল দাবি</span>
-                      </span>
+                      <span className="text-base font-medium text-ink">Poll demand</span>
                       {room.myPollDemands.includes(activeItem.id) ? (
                         <Badge tone="success" dot>
                           Recorded
@@ -446,7 +424,7 @@ export default function ShareholderMeetingRoomPage() {
                         }
                         onClick={() => submitPollDemand.mutate(activeItem.id)}
                       >
-                        Demand a poll · <span lang="bn">পোল দাবি করুন</span>
+                        Demand a poll
                       </Button>
                     )}
                   </div>
@@ -473,9 +451,7 @@ export default function ShareholderMeetingRoomPage() {
 
 function MotionStageRow({
   title,
-  banglaTitle,
   buttonLabel,
-  banglaButtonLabel,
   stageOpen,
   accepted,
   myMotion,
@@ -484,9 +460,7 @@ function MotionStageRow({
   onSubmit,
 }: {
   title: string;
-  banglaTitle: string;
   buttonLabel: string;
-  banglaButtonLabel: string;
   stageOpen: boolean;
   accepted: MotionDto | null;
   myMotion: { status: MotionDto['status'] } | null;
@@ -497,9 +471,7 @@ function MotionStageRow({
   return (
     <div className="px-5 py-4">
       <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-base font-medium text-ink">
-          {title} · <span lang="bn">{banglaTitle}</span>
-        </span>
+        <span className="text-base font-medium text-ink">{title}</span>
         {accepted ? (
           <Badge tone="success" dot>
             Accepted
@@ -536,7 +508,7 @@ function MotionStageRow({
             disabled={!stageOpen || !permitted || loading}
             onClick={onSubmit}
           >
-            {buttonLabel} · <span lang="bn">{banglaButtonLabel}</span>
+            {buttonLabel}
           </Button>
           {stageOpen && !permitted && (
             <p className="mt-2 text-base text-ink-3">
@@ -718,11 +690,7 @@ function QuestionsSection({
   return (
     <Panel>
       <PanelHeader
-        title={
-          <>
-            Ask a question · <span lang="bn">প্রশ্ন করুন</span>
-          </>
-        }
+        title="Ask a question"
         description="Questions are reviewed by the moderator before going to the board."
       />
 
@@ -735,7 +703,7 @@ function QuestionsSection({
             aria-pressed={mode === 'TEXT'}
             onClick={() => setMode('TEXT')}
           >
-            Written · <span lang="bn">লিখিত</span>
+            Written
           </Button>
           <Button
             type="button"
@@ -744,11 +712,11 @@ function QuestionsSection({
             aria-pressed={mode === 'AUDIO'}
             onClick={() => setMode('AUDIO')}
           >
-            Audio · <span lang="bn">অডিও</span>
+            Audio
           </Button>
         </div>
 
-        <Field label="Agenda item · আলোচ্য বিষয়" htmlFor="question-agenda" optional>
+        <Field label="Agenda item" htmlFor="question-agenda" optional>
           <Select id="question-agenda" value={agendaItemId} onChange={(e) => setAgendaItemId(e.target.value)}>
             <option value="">General meeting question</option>
             {room.agenda.map((a) => (
@@ -767,14 +735,14 @@ function QuestionsSection({
               if (canAsk && text.trim().length >= 3) submitText.mutate();
             }}
           >
-            <Field label="Your question (English or বাংলা)" htmlFor="question-text">
+            <Field label="Your question" htmlFor="question-text">
               <Textarea
                 id="question-text"
                 rows={4}
                 className="text-base"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Write your question in English or বাংলা..."
+                placeholder="Write your question..."
                 disabled={!canAsk}
               />
             </Field>
@@ -785,7 +753,7 @@ function QuestionsSection({
               loading={submitText.isPending}
               disabled={!canAsk || text.trim().length < 3}
             >
-              Submit question · <span lang="bn">প্রশ্ন জমা দিন</span>
+              Submit question
             </Button>
           </form>
         ) : (
@@ -803,7 +771,7 @@ function QuestionsSection({
                 disabled={!canAsk}
                 onClick={startRecording}
               >
-                <Mic aria-hidden /> Start recording · <span lang="bn">রেকর্ড শুরু করুন</span>
+                <Mic aria-hidden /> Start recording
               </Button>
             )}
 
@@ -813,7 +781,7 @@ function QuestionsSection({
                   Recording… {elapsed}s / {room.audioMaxSeconds}s
                 </p>
                 <Button type="button" size="lg" variant="danger" className="w-full" onClick={stopRecording}>
-                  <Square aria-hidden /> Stop recording · <span lang="bn">থামুন</span>
+                  <Square aria-hidden /> Stop recording
                 </Button>
               </div>
             )}
@@ -832,7 +800,7 @@ function QuestionsSection({
                     loading={submitAudio.isPending}
                     onClick={() => submitAudio.mutate()}
                   >
-                    Send audio · <span lang="bn">পাঠান</span>
+                    Send audio
                   </Button>
                 </div>
               </div>
@@ -844,7 +812,7 @@ function QuestionsSection({
       {room.myQuestions.length > 0 && (
         <div className="border-t border-line">
           <p className="px-5 pt-4 pb-2 text-base font-semibold text-ink">
-            Your questions · <span lang="bn">আপনার প্রশ্নসমূহ</span>
+            Your questions
           </p>
           <ul className="divide-y divide-line">
             {room.myQuestions.map((q) => {

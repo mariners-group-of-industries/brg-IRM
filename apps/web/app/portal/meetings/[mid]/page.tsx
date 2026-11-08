@@ -66,10 +66,10 @@ export default function PortalMeetingPage() {
                 {q.data.mode === 'HYBRID' ? `Online and at ${q.data.venue}` : 'Online meeting'}
               </span>
             </div>
-            <p className="mt-1 text-sm text-ink-3">Record date {formatDate(q.data.recordDate)} · রেকর্ড তারিখ</p>
+            <p className="mt-1 text-sm text-ink-3">Record date {formatDate(q.data.recordDate)}</p>
 
             <Panel className="mt-6">
-              <PanelHeader title="Your registration · নিবন্ধন" />
+              <PanelHeader title="Your registration" />
               {q.data.eligibility.length === 0 ? (
                 <p className="px-5 py-4 text-sm text-ink-3">You have no shareholding or authorization for this meeting.</p>
               ) : (
@@ -87,7 +87,7 @@ export default function PortalMeetingPage() {
                         <span className="inline-flex items-center gap-1.5 text-sm font-medium text-success"><CheckCircle2 className="size-4" aria-hidden /> Registered</span>
                       ) : (
                         <Button size="lg" disabled={!e.eligible || !q.data.registrationOpen} loading={register.isPending && register.variables === e.key} onClick={() => register.mutate(e.key)}>
-                          Register · নিবন্ধন করুন
+                          Register
                         </Button>
                       )}
                     </li>
@@ -109,7 +109,7 @@ export default function PortalMeetingPage() {
                     </p>
                     <Button asChild size="lg">
                       <Link href={`/portal/meetings/${mid}/room`}>
-                        Enter meeting room · <span lang="bn">সভাকক্ষে প্রবেশ করুন</span>
+                        Enter meeting room
                       </Link>
                     </Button>
                   </div>
@@ -117,7 +117,7 @@ export default function PortalMeetingPage() {
             </Panel>
 
             <Panel className="mt-6">
-              <PanelHeader title="Agenda · আলোচ্যসূচি" />
+              <PanelHeader title="Agenda" />
               <ol className="divide-y divide-line">
                 {q.data.agenda.map((a) => (
                   <li key={a.id} className="flex gap-4 px-5 py-4">
@@ -138,7 +138,7 @@ export default function PortalMeetingPage() {
 
             {q.data.documents.length > 0 && (
               <Panel className="mt-6">
-                <PanelHeader title="Documents · নথি" />
+                <PanelHeader title="Documents" />
                 <ul className="divide-y divide-line">
                   {q.data.documents.map((d) => (
                     <li key={d.id}>
@@ -158,7 +158,7 @@ export default function PortalMeetingPage() {
 
             {q.data.noticeText && (
               <Panel className="mt-6">
-                <PanelHeader title="Notice of meeting · সভার নোটিশ" />
+                <PanelHeader title="Notice of meeting" />
                 <div className="px-5 py-4 text-sm leading-relaxed whitespace-pre-line text-ink-2">{q.data.noticeText}</div>
               </Panel>
             )}
