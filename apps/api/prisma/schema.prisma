@@ -687,6 +687,9 @@ model Meeting {
   snapshots    ShareholdingSnapshot[]
   entitlements VotingEntitlement[]
   proxies      ProxyAuthorization[]
+  votingSessions   VotingSession[]
+  votingResults    VotingResult[]
+  privilegedGrants PrivilegedAccessGrant[]
 
   @@index([companyId, scheduledStart])
   @@map("meetings")
@@ -725,9 +728,10 @@ model AgendaItem {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  meeting    Meeting           @relation(fields: [meetingId], references: [id], onDelete: Restrict)
-  resolution Resolution?
-  documents  MeetingDocument[]
+  meeting        Meeting           @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  resolution     Resolution?
+  documents      MeetingDocument[]
+  votingSessions VotingSession[]
 
   @@unique([meetingId, number])
   @@index([meetingId, position])
@@ -842,6 +846,7 @@ model VotingEntitlement {
 
   meeting  Meeting              @relation(fields: [meetingId], references: [id], onDelete: Restrict)
   snapshot ShareholdingSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  ballots  Ballot[]
 
   @@index([meetingId, shareholderId])
   @@map("voting_entitlements")
@@ -868,7 +873,8 @@ model MeetingParticipant {
   status         MeetingParticipantStatus @default(REGISTERED)
   registeredAt   DateTime                 @default(now()) @map("registered_at") @db.Timestamptz(3)
 
-  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  meeting Meeting  @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  ballots Ballot[]
 
   @@unique([meetingId, userId, kind, shareholderId])
   @@index([meetingId, status])
@@ -1027,4 +1033,204 @@ model MeetingAnnouncement {
 
   @@index([meetingId, createdAt])
   @@map("meeting_announcements")
+}
+
+// ═══ Phase E: voting and scrutineer access ═════════════════════════════
+
+enum VotingMethod {
+  SHARE_WEIGHTED
+  ONE_MEMBER_ONE_VOTE
+}
+
+enum BallotChoice {
+  FOR
+  AGAINST
+  ABSTAIN
+}
+
+enum VoteAuditEventType {
+  SESSION_OPENED
+  BALLOT_CAST
+  BALLOT_SUPERSEDED
+  VOTE_REJECTED
+  SESSION_CLOSED
+  RESULTS_RELEASED
+}
+
+enum PrivilegedGrantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+/// A voting session on a resolution. Closed sessions cannot be reopened;
+/// a new session on the same item increments session_number with a reason.
+model VotingSession {
+  id                  String         @id @default(uuid(7)) @db.Uuid
+  tenantId            String         @map("tenant_id") @db.Uuid
+  companyId           String         @map("company_id") @db.Uuid
+  meetingId           String         @map("meeting_id") @db.Uuid
+  agendaItemId        String         @map("agenda_item_id") @db.Uuid
+  sessionNumber       Int            @default(1) @map("session_number")
+  method              VotingMethod
+  choices             BallotChoice[]
+  abstainCountsInBase Boolean        @map("abstain_counts_in_base")
+  allowChange         Boolean        @map("allow_change")
+  majorityNumerator   Int            @map("majority_numerator")
+  majorityDenominator Int            @map("majority_denominator")
+  openedById          String         @map("opened_by_id") @db.Uuid
+  openedAt            DateTime       @default(now()) @map("opened_at") @db.Timestamptz(3)
+  closesAt            DateTime?      @map("closes_at") @db.Timestamptz(3)
+  closedAt            DateTime?      @map("closed_at") @db.Timestamptz(3)
+  closedById          String?        @map("closed_by_id") @db.Uuid
+  reopenReason        String?        @map("reopen_reason") @db.VarChar(500)
+
+  meeting            Meeting                 @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  agendaItem         AgendaItem              @relation(fields: [agendaItemId], references: [id], onDelete: Restrict)
+  ballots            Ballot[]
+  idempotencyRecords VoteIdempotencyRecord[]
+  auditEvents        VoteAuditEvent[]
+  result             VotingResult?
+
+  @@unique([agendaItemId, sessionNumber])
+  @@index([meetingId, openedAt])
+  @@map("voting_sessions")
+}
+
+/// Append-only (supersede-only) cast ballot.
+/// DB partial unique index allows at most one effective row (superseded_at IS NULL)
+/// per (voting_session_id, entitlement_id), and one per shareholder under ONE_MEMBER_ONE_VOTE.
+model Ballot {
+  id              String          @id @default(uuid(7)) @db.Uuid
+  tenantId        String          @map("tenant_id") @db.Uuid
+  companyId       String          @map("company_id") @db.Uuid
+  meetingId       String          @map("meeting_id") @db.Uuid
+  votingSessionId String          @map("voting_session_id") @db.Uuid
+  entitlementId   String          @map("entitlement_id") @db.Uuid
+  participantId   String          @map("participant_id") @db.Uuid
+  castingUserId   String          @map("casting_user_id") @db.Uuid
+  shareholderId   String          @map("shareholder_id") @db.Uuid
+  actingAs        ParticipantKind @map("acting_as")
+  method          VotingMethod
+  choice          BallotChoice
+  weight          BigInt
+  idempotencyKey  String          @map("idempotency_key") @db.VarChar(128)
+  castAt          DateTime        @default(now()) @map("cast_at") @db.Timestamptz(3)
+  supersededAt    DateTime?       @map("superseded_at") @db.Timestamptz(3)
+
+  votingSession VotingSession      @relation(fields: [votingSessionId], references: [id], onDelete: Restrict)
+  entitlement   VotingEntitlement  @relation(fields: [entitlementId], references: [id], onDelete: Restrict)
+  participant   MeetingParticipant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+
+  @@index([votingSessionId, supersededAt])
+  @@index([votingSessionId, castingUserId])
+  @@index([votingSessionId, shareholderId])
+  @@map("ballots")
+}
+
+/// Immutable request/response record ensuring Idempotency-Key replays and conflict detection.
+model VoteIdempotencyRecord {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  companyId       String   @map("company_id") @db.Uuid
+  meetingId       String   @map("meeting_id") @db.Uuid
+  votingSessionId String   @map("voting_session_id") @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  idempotencyKey  String   @map("idempotency_key") @db.VarChar(128)
+  requestHash     String   @map("request_hash") @db.VarChar(64)
+  response        Json
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  votingSession VotingSession @relation(fields: [votingSessionId], references: [id], onDelete: Restrict)
+
+  @@unique([votingSessionId, userId, idempotencyKey])
+  @@map("vote_idempotency_records")
+}
+
+/// Hash-chained vote ledger. Never stores ballot choices. Append-only (trigger blocks UPDATE/DELETE).
+model VoteAuditEvent {
+  id              String             @id @default(uuid(7)) @db.Uuid
+  tenantId        String             @map("tenant_id") @db.Uuid
+  companyId       String             @map("company_id") @db.Uuid
+  meetingId       String             @map("meeting_id") @db.Uuid
+  votingSessionId String             @map("voting_session_id") @db.Uuid
+  sequenceNo      Int                @map("sequence_no")
+  eventType       VoteAuditEventType @map("event_type")
+  actorUserId     String?            @map("actor_user_id") @db.Uuid
+  entitlementId   String?            @map("entitlement_id") @db.Uuid
+  ballotId        String?            @map("ballot_id") @db.Uuid
+  reason          String?            @db.VarChar(500)
+  prevHash        String             @map("prev_hash") @db.VarChar(64)
+  hash            String             @db.VarChar(64)
+  occurredAt      DateTime           @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  votingSession VotingSession @relation(fields: [votingSessionId], references: [id], onDelete: Restrict)
+
+  @@unique([votingSessionId, sequenceNo])
+  @@unique([votingSessionId, hash])
+  @@index([votingSessionId, occurredAt])
+  @@map("vote_audit_events")
+}
+
+/// Sealed tally computed at session close. Tally columns are immutable; only released_at/released_by_id can be set once.
+model VotingResult {
+  id                  String         @id @default(uuid(7)) @db.Uuid
+  tenantId            String         @map("tenant_id") @db.Uuid
+  companyId           String         @map("company_id") @db.Uuid
+  meetingId           String         @map("meeting_id") @db.Uuid
+  votingSessionId     String         @unique @map("voting_session_id") @db.Uuid
+  resolutionKind      ResolutionKind @map("resolution_kind")
+  forVotes            BigInt         @map("for_votes")
+  againstVotes        BigInt         @map("against_votes")
+  abstainVotes        BigInt         @map("abstain_votes")
+  forCount            Int            @map("for_count")
+  againstCount        Int            @map("against_count")
+  abstainCount        Int            @map("abstain_count")
+  ballotCount         Int            @map("ballot_count")
+  baseVotes           BigInt         @map("base_votes")
+  eligibleVotes       BigInt         @map("eligible_votes")
+  abstainCountsInBase Boolean        @map("abstain_counts_in_base")
+  majorityNumerator   Int            @map("majority_numerator")
+  majorityDenominator Int            @map("majority_denominator")
+  passed              Boolean
+  sealAuditSeq        Int            @map("seal_audit_seq")
+  sealAuditHash       String         @map("seal_audit_hash") @db.VarChar(64)
+  inputHash           String         @map("input_hash") @db.VarChar(64)
+  sealedAt            DateTime       @default(now()) @map("sealed_at") @db.Timestamptz(3)
+  releasedAt          DateTime?      @map("released_at") @db.Timestamptz(3)
+  releasedById        String?        @map("released_by_id") @db.Uuid
+
+  meeting       Meeting       @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  votingSession VotingSession @relation(fields: [votingSessionId], references: [id], onDelete: Restrict)
+
+  @@index([meetingId, sealedAt])
+  @@map("voting_results")
+}
+
+/// Four-eyes time-boxed scrutineer access to inspect individual ballots (permission = 'ballot.individual.read').
+model PrivilegedAccessGrant {
+  id              String                @id @default(uuid(7)) @db.Uuid
+  tenantId        String                @map("tenant_id") @db.Uuid
+  companyId       String                @map("company_id") @db.Uuid
+  meetingId       String                @map("meeting_id") @db.Uuid
+  permission      String                @default("ballot.individual.read") @db.VarChar(80)
+  granteeUserId   String                @map("grantee_user_id") @db.Uuid
+  reason          String                @db.VarChar(500)
+  durationMinutes Int                   @map("duration_minutes")
+  status          PrivilegedGrantStatus @default(PENDING)
+  requestedById   String                @map("requested_by_id") @db.Uuid
+  requestedAt     DateTime              @default(now()) @map("requested_at") @db.Timestamptz(3)
+  decidedById     String?               @map("decided_by_id") @db.Uuid
+  decidedAt       DateTime?             @map("decided_at") @db.Timestamptz(3)
+  decisionNote    String?               @map("decision_note") @db.VarChar(500)
+  expiresAt       DateTime?             @map("expires_at") @db.Timestamptz(3)
+  revokedAt       DateTime?             @map("revoked_at") @db.Timestamptz(3)
+  revokedById     String?               @map("revoked_by_id") @db.Uuid
+  revokeNote      String?               @map("revoke_note") @db.VarChar(500)
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, meetingId, granteeUserId, status])
+  @@map("privileged_access_grants")
 }

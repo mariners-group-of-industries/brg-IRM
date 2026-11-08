@@ -36,13 +36,26 @@
 | Immediate revocation | Revoking a representative or proxy removes the participant role and ends that person's sessions. | `participants.test.ts` |
 | Immutable holdings | Database trigger | `register.test.ts` |
 
+## 2b. Implemented controls (Phase E: Secure Voting)
+
+| Control | Implementation | Verified by |
+|---|---|---|
+| Ballot secrecy | Pre-release secrecy strictly hides intermediate counts, turnout, and choices across all APIs, staff live views, and board screens until explicitly sealed and released by meeting admin. | `voting.test.ts`, Playwright `phase-e.spec.ts` |
+| Double-voting prevention | Partial unique index `ballots_one_effective_per_entitlement` on `(voting_session_id, entitlement_id) WHERE superseded_at IS NULL` ensures only one effective ballot per entitlement exists at any point in time. | `voting.test.ts` |
+| Idempotency & race handling | Unique index on `vote_idempotency_records` with HTTP `Idempotency-Key` header prevents duplicate submission under network retries or 50 concurrent parallel submissions. | `voting.test.ts` (50 parallel stress test) |
+| Sealed ballot immutability | PostgreSQL raw SQL trigger `ballots_seal_immutable` rejects any UPDATE or DELETE operations on ballots once a session is closed. | `voting.test.ts` |
+| Sealed results immutability | PostgreSQL raw SQL trigger `voting_results_seal_immutable` rejects any modification or deletion of sealed voting results. | `voting.test.ts` |
+| Cryptographic hash chaining | Each voting session maintains an append-only SHA-256 hash-chain of vote audit events (`prev_hash`, `hash`) over canonical JSON representations of events. Tampering breaks the verification chain. | `packages/shared/src/voting.test.ts`, `voting.test.ts` (`/audit/verify`) |
+| Scrutineer four-eyes authorization | Individual ballot inspection is disabled by default for all roles. Requires an approved `privileged_access_grant` with a stated business justification, duration window, and approval by a distinct administrator (self-approval prohibited). | `voting.test.ts`, Playwright `phase-e.spec.ts` |
+| Inspection audit logging | Every individual ballot inspection event by a scrutineer is logged to both `privileged_access_audit_logs` and platform `audit_logs`. | `voting.test.ts` |
+| Row-level security | `irm_app` RLS policies applied to `voting_sessions`, `voting_entitlements`, `ballots`, `voting_results`, `vote_audit_events`, `vote_idempotency_records`, and `privileged_access_grants`. | PostgreSQL migration `20261108103000_phase_e_voting` |
+
 ## 3. Planned controls
 
 | Phase | Control |
 |---|---|
 | Before production | A real SMS and email provider. The dev outbox is refused at production boot. An S3-compatible storage driver with server-side encryption, plus a malware scan hook on uploads. The API database role should be non-owner, so RLS also covers code paths outside `scoped()`. |
 | C | Staff WebAuthn (passkeys) as a stronger second factor. |
-| E | Ballot secrecy, privileged access grants (time-boxed, justified, dual-approved, audited) and hash-chained vote audit. |
 | F | Dependency and secret scanning in CI, a DAST pass, a penetration test before go-live, and a backup and restore drill. |
 
 ## 4. Threat model summary

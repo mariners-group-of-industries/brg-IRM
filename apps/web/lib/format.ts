@@ -101,6 +101,17 @@ const AUDIT_LABELS: Record<string, string> = {
   'question.moderate': 'Question moderated',
   'meeting.announcement_create': 'Announcement published',
   'meeting.announcement_retract': 'Announcement withdrawn',
+  'voting.session_open': 'Voting session opened',
+  'voting.session_close': 'Voting session closed and sealed',
+  'voting.results_release': 'Voting results released',
+  'vote.cast': 'Ballot cast',
+  'vote.rejected': 'Ballot rejected',
+  'proxy.precedence_superseded': 'Proxy ballot superseded by shareholder attendance or direct vote',
+  'privileged_grant.request': 'Scrutineer access requested',
+  'privileged_grant.approve': 'Scrutineer access approved',
+  'privileged_grant.reject': 'Scrutineer access rejected',
+  'privileged_grant.revoke': 'Scrutineer access revoked',
+  'voting.individual_inspection': 'Individual ballots inspected',
 };
 export const auditLabel = (a: string) => AUDIT_LABELS[a] ?? a;
 
@@ -120,6 +131,20 @@ export function formatShares(s: string | null | undefined): string {
     return new Intl.NumberFormat('en-IN').format(BigInt(s));
   } catch {
     return s;
+  }
+}
+
+/** Exact bigint-safe percentage string (1 decimal place) relative to voting base. */
+export function formatVotePct(votes: string | null | undefined, base: string | null | undefined): string {
+  if (!votes || !base) return '0.0%';
+  try {
+    const v = BigInt(votes);
+    const b = BigInt(base);
+    if (b <= 0n) return '0.0%';
+    const tenths = (v * 1000n) / b;
+    return `${(Number(tenths) / 10).toFixed(1)}%`;
+  } catch {
+    return '0.0%';
   }
 }
 

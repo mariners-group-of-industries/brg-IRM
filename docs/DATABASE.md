@@ -68,7 +68,33 @@ Tables: `meetings`, `meeting_state_transitions`, `agenda_items`, `resolutions`, 
 
 **Record-date snapshot.** When a meeting moves to Registration Open, one SQL statement copies, for each account and share class, the holding row with the latest `as_of_date` on or before the record date, skipping zero balances and inactive holders. Voting entitlements are then created with `weight = quantity × votes_per_share` for classes that carry votes. Because closures write a zero-share row dated to the closing import, an account that left the register before the record date is correctly excluded.
 
-## 2. Target model (Phases D to F)
+## 1c. Implemented in Phase D
+
+Tables: `meeting_attendance`, `agenda_item_motions`, `poll_demands`, `meeting_comments`, `audio_questions`, `moderation_actions`, and `meeting_announcements`.
+
+| Rule | Mechanism |
+|---|---|
+| Single accepted proposer and seconder per motion stage | Partial unique index `motions_one_accepted` (`WHERE status = 'ACCEPTED'`) prevents concurrency race conditions |
+| Tenant and company isolation | Composite foreign keys `(company_id, tenant_id)` to `companies(id, tenant_id)` and `(meeting_id, company_id)` |
+| Audio question payload verification | Magic-byte checking, size & duration bounds, storage in private disk driver |
+| Row-level security | Same `irm_app` policy on all Phase D communication and motion tables |
+
+## 1d. Implemented in Phase E
+
+Tables: `voting_sessions`, `voting_entitlements`, `ballots`, `voting_results`, `vote_audit_events`, `vote_idempotency_records`, and `privileged_access_grants`.
+
+| Rule | Mechanism |
+|---|---|
+| Single effective ballot per entitlement | Partial unique index `ballots_one_effective_per_entitlement` on `(voting_session_id, entitlement_id) WHERE superseded_at IS NULL` |
+| Idempotent ballot casting | Unique index on `vote_idempotency_records(voting_session_id, idempotency_key)` |
+| Sealed ballot immutability | PostgreSQL trigger `ballots_seal_immutable` rejects UPDATE or DELETE on any ballot whose session is closed |
+| Sealed results immutability | PostgreSQL trigger `voting_results_seal_immutable` rejects UPDATE or DELETE on sealed voting results |
+| Append-only audit trail | Trigger `irm_immutable_row()` on `vote_audit_events` |
+| Cryptographic audit chain | SHA-256 hash chaining `hash = SHA256(prev_hash + id + session_id + event_type + ballot_id + user_id + timestamp + payload_json)` |
+| Four-eyes scrutineer authorization | Dual-control `privileged_access_grants`: creator cannot approve, requires distinct admin, time-boxed validity window |
+| Row-level security | RLS enabled on all 6 voting tables and privileged grants with `irm_app` company policy |
+
+## 2. Target model (Phase F)
 
 ```mermaid
 erDiagram

@@ -13,4 +13,5 @@ playwright-report/
 test-results/
 apps/api/src/generated/
 uploads/
+tests/e2e/screenshots/
 *.log

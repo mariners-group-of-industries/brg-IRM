@@ -121,10 +121,41 @@ Known limits:
 - **In-process event bus.** `MeetingEventsService` fans out SSE pointer events within one API process. Multi-instance deployments will need a Redis pub/sub bridge behind `MeetingEventsService` (PostgreSQL already holds all authoritative state).
 - **Ballot casting.** Voting sessions, ballot casting and weighted tallying are delivered next in Phase E.
 
-## Phase E: Secure voting (next)
+## Phase E: Secure voting (complete, 2026-11-08)
 
-Entitlements, voting sessions, ballot casting with idempotency, weighted tally, hash-chained vote audit, results release, and privileged access grants. The required test list is in `VOTING_RULES.md`.
+Delivered:
+- 6 PostgreSQL tables with RLS: `voting_sessions`, `voting_entitlements`, `ballots`, `voting_results`, `vote_audit_events`, `vote_idempotency_records` plus `privileged_access_grants`.
+- Raw SQL triggers: `ballots_seal_immutable` and `voting_results_seal_immutable` preventing any update or deletion of ballots or results once sealed; `irm_immutable_row()` on audit events.
+- Partial unique indexes: `ballots_one_effective_per_entitlement` (`WHERE superseded_at IS NULL`) guarantees atomic single effective vote per entitlement.
+- Idempotency key tracking (`vote_idempotency_records`) handling parallel concurrent retries cleanly.
+- Deterministic BigInt voting tallies (`computeTally`) in `@irm/shared` and API: ordinary resolution (>50%), special resolution (>=75%), `abstainCountsInBase` toggle, exact ties, and support for `ONE_SHARE_ONE_VOTE` or `ONE_MEMBER_ONE_VOTE`.
+- Strict pre-release secrecy: zero intermediate counts, turnout, or choices exposed to staff, board, or participants before meeting admin executes seal and release.
+- Proxy precedence: configurable `SHAREHOLDER_REVOKES_PROXY` (superseding existing proxy ballot and suspending proxy voting rights) vs `PROXY_REMAINS_VALID` (blocking shareholder if proxy already cast).
+- Scrutineer four-eyes privileged access grants: time-boxed, justified requests; approval prohibited by creator and restricted to distinct admins; individual ballot inspection unlocked only with active grant and fully audited.
+- Cryptographic hash-chained vote audit trail: each session forms an append-only SHA-256 hash chain (`prev_hash`, `hash`) with real-time verification endpoint (`/audit/verify`).
+- English-only shareholder room voting stage (`/portal/meetings/[mid]/room`): 44 px touch targets, polite `aria-live` screen-reader announcements, split-holding allocation, choice selection, and outcome summary.
+- Staff Live Console & Scrutineer tabs: open session modal with auto-suggested resolution defaults, close & seal tally, release results, cryptographic chain verification, and four-eyes scrutineer grant governance.
 
-## Phase F: Reports and hardening
+| Acceptance criterion | Status | Evidence |
+|---|---|---|
+| Deterministic integer tallies with ordinary & special rules | Done | `voting.test.ts` (shared unit tests) & `voting.test.ts` (API integration tests) |
+| Pre-release secrecy enforced across API, Live Console, and Board View | Done | API tests return null results prior to release; `e02-board-waiting.png` verified |
+| Parallel ballot submissions handled without race conditions or double-counting | Done | 50 concurrent submissions tested in `voting.test.ts` with distinct & shared idempotency keys |
+| Immutability enforced by PostgreSQL triggers on sealed ballots and results | Done | `voting.test.ts` tests direct DB update/delete rejections under triggers |
+| Four-eyes authorization required for individual ballot inspection | Done | `voting.test.ts` & Playwright `e05-scrutineer-grants.png` |
+| Hash-chain audit integrity verified cryptographically | Done | `verifySessionChain` in shared & API `/audit/verify` endpoint |
+| Responsive desktop & mobile shareholder voting room | Done | Playwright `phase-e.spec.ts` passing 10/10 tests; `m07-shareholder-vote.png` |
+
+Test totals: 40 shared unit tests, 105 API integration tests, and Playwright tests across desktop and mobile.
+
+Fixed during Phase E:
+- Converted entire web frontend (`apps/web`) to 100% English per user specification, removing all bilingual Bangla labels from shareholder meeting room and admin views.
+- Upgraded brand banner to "BRG1 IRM" across the platform.
+
+Known limits:
+- Scrutineer grants expire automatically based on `validUntil` timestamps checked at request time. A background cron cleanup can formally mark status as EXPIRED in Phase F.
+- Physical polling card imports for hybrid meetings will be integrated in Phase F reports and tally reconciliations.
+
+## Phase F: Reports and hardening (next)
 
 PDF and Excel reports, minutes, accessibility audit, load test, security testing, a backup and restore drill, and deployment readiness.

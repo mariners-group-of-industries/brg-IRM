@@ -270,6 +270,16 @@ export class MeetingsService {
         { key: 'board', label: 'Board members are assigned', ok: board > 0, blocking: false },
       );
     }
+    if ((m.state === 'LIVE' || m.state === 'PAUSED') && to === 'COMPLETED') {
+      const openVoting = await tx.votingSession.count({ where: { meetingId: m.id, closedAt: null } });
+      checks.push({
+        key: 'votingClosed',
+        label: 'All voting sessions are closed',
+        ok: openVoting === 0,
+        blocking: true,
+        detail: openVoting > 0 ? `${openVoting} voting session(s) remain open` : undefined,
+      });
+    }
     return checks;
   }
 

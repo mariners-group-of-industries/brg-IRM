@@ -39,6 +39,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { MeetingEventsService } from './meeting-events.service.js';
 import { VideoService } from './video.service.js';
+import { VotingService } from '../voting/voting.service.js';
 
 type Tx = Prisma.TransactionClient;
 
@@ -62,6 +63,7 @@ export class LiveService implements OnModuleInit {
     private readonly storage: StorageService,
     private readonly events: MeetingEventsService,
     private readonly video: VideoService,
+    private readonly voting: VotingService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -74,7 +76,7 @@ export class LiveService implements OnModuleInit {
 
   // ─── Staff Live Console ────────────────────────────────────────────────
 
-  async getConsole(companyId: string, meetingId: string): Promise<LiveConsole> {
+  async getConsole(companyId: string, meetingId: string, p?: AuthPrincipal): Promise<LiveConsole> {
     return this.prisma.scoped([companyId], async (tx) => {
       const m = await tx.meeting.findFirst({
         where: { id: meetingId, companyId },
@@ -191,6 +193,8 @@ export class LiveService implements OnModuleInit {
         questions[qc.status as QuestionStatus] = qc._count.status;
       }
 
+      const votingSessions = p ? await this.voting.buildStaffSessions(tx, m, p, false) : [];
+
       return {
         meetingId: m.id,
         videoRoomId: m.videoRoomId,
@@ -202,6 +206,7 @@ export class LiveService implements OnModuleInit {
         attendance,
         announcements,
         questions,
+        votingSessions,
       };
     });
   }
@@ -772,7 +777,7 @@ export class LiveService implements OnModuleInit {
 
   // ─── Board Room View ───────────────────────────────────────────────────
 
-  async getBoardRoom(companyId: string, meetingId: string): Promise<BoardRoom> {
+  async getBoardRoom(companyId: string, meetingId: string, p?: AuthPrincipal): Promise<BoardRoom> {
     return this.prisma.scoped([companyId], async (tx) => {
       const m = await tx.meeting.findFirst({
         where: { id: meetingId, companyId },
@@ -821,6 +826,8 @@ export class LiveService implements OnModuleInit {
         accepted: acceptedMotions.get(item.id) ?? { PROPOSAL: null, SECONDING: null },
       }));
 
+      const votingSessions = p ? await this.voting.buildStaffSessions(tx, m, p, true) : [];
+
       return {
         meetingId: m.id,
         state: m.state as MeetingState,
@@ -829,6 +836,7 @@ export class LiveService implements OnModuleInit {
         forwardedQuestions,
         attendance,
         announcements,
+        votingSessions,
       };
     });
   }
@@ -926,6 +934,8 @@ export class LiveService implements OnModuleInit {
         : [];
       const proxyMap = new Map(proxies.map((pr) => [pr.id, pr.scope]));
 
+      const votingCtx = await this.voting.buildParticipantContext(tx, p.userId, m, regs);
+
       const registrations: RoomRegistration[] = regs.map((r) => {
         const votes = r.entitlementIds.reduce((sum, eid) => sum + (weightMap.get(eid) ?? 0n), 0n);
         const proxyScope = r.proxyId ? proxyMap.get(r.proxyId) : null;
@@ -943,6 +953,8 @@ export class LiveService implements OnModuleInit {
           shareholderName: holderMap.get(r.shareholderId) ?? 'Shareholder',
           votes: votes.toString(),
           capabilities,
+          proxySuspendedByShareholder: votingCtx.proxySuspendedByParticipant.get(r.id) ?? false,
+          entitlements: votingCtx.entitlementsByParticipant.get(r.id) ?? [],
         };
       });
 
@@ -1022,6 +1034,7 @@ export class LiveService implements OnModuleInit {
         announcements,
         attendance: { participantsPresent: distinctParticipants },
         audioMaxSeconds: rules.audioQuestionMaxSeconds,
+        votingSessions: votingCtx.votingSessions,
       };
     });
   }

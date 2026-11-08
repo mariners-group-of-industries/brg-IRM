@@ -3,6 +3,11 @@ import type { MeetingRules, MeetingState } from './meeting.js';
 import type { AgendaStage, MotionKind, ParticipantCapabilities, QuestionStatus } from './live.js';
 import type { ParticipantKind } from './shareholder.js';
 import type { ShareCount } from './shareholder-types.js';
+import type {
+  ParticipantEntitlementDto,
+  ParticipantVotingSessionDto,
+  StaffVotingSessionDto,
+} from './voting-types.js';
 
 export interface VideoJoinInfo {
   provider: 'simulator' | 'zoom';
@@ -66,6 +71,7 @@ export interface LiveConsole {
   attendance: AttendanceSummary;
   announcements: AnnouncementDto[];
   questions: Record<QuestionStatus, number>;
+  votingSessions: StaffVotingSessionDto[];
 }
 
 export interface QuestionDto {
@@ -89,6 +95,8 @@ export interface RoomRegistration {
   shareholderName: string;
   votes: ShareCount;
   capabilities: ParticipantCapabilities;
+  proxySuspendedByShareholder: boolean;
+  entitlements: ParticipantEntitlementDto[];
 }
 
 /** What a registered participant sees in the meeting room. */
@@ -108,6 +116,7 @@ export interface MeetingRoom {
   announcements: AnnouncementDto[];
   attendance: { participantsPresent: number };
   audioMaxSeconds: number;
+  votingSessions: ParticipantVotingSessionDto[];
 }
 
 export interface BoardRoom {
@@ -118,4 +127,5 @@ export interface BoardRoom {
   forwardedQuestions: QuestionDto[];
   attendance: AttendanceSummary;
   announcements: AnnouncementDto[];
+  votingSessions: StaffVotingSessionDto[];
 }

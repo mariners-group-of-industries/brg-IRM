@@ -10,3 +10,5 @@ export * from './meeting.js';
 export * from './meeting-types.js';
 export * from './live.js';
 export * from './live-types.js';
+export * from './voting.js';
+export * from './voting-types.js';

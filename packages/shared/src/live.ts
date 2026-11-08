@@ -122,7 +122,10 @@ export type MeetingEventType =
   | 'announcement'
   | 'question.new'
   | 'question.updated'
-  | 'question.forwarded';
+  | 'question.forwarded'
+  | 'voting.session'
+  | 'voting.ballot'
+  | 'results.released';
 
 export interface MeetingEvent {
   type: MeetingEventType;

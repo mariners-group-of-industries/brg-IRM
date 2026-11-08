@@ -60,7 +60,7 @@ export class LiveController {
     @Param('meetingId', new ParseUUIDPipe()) meetingId: string,
   ): Promise<LiveConsole> {
     await this.access.assertCompany(p, companyId, PERMISSIONS.ATTENDANCE_READ);
-    return this.live.getConsole(companyId, meetingId);
+    return this.live.getConsole(companyId, meetingId, p);
   }
 
   @Put('video-room')
@@ -205,7 +205,7 @@ export class LiveController {
     @Param('meetingId', new ParseUUIDPipe()) meetingId: string,
   ): Promise<BoardRoom> {
     await this.access.assertCompany(p, companyId, PERMISSIONS.MEETING_JOIN_BOARD);
-    return this.live.getBoardRoom(companyId, meetingId);
+    return this.live.getBoardRoom(companyId, meetingId, p);
   }
 
   @Get('video')

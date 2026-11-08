@@ -99,8 +99,17 @@ export const meetingRulesSchema = z.object({
       lodgementDeadlineHours: z.number().int().min(0).max(720).default(72),
       maxPerProxy: z.number().int().min(1).nullable().default(null),
       canSpeak: z.boolean().default(false),
+      shareholderPresencePrecedence: z
+        .enum(['SHAREHOLDER_REVOKES_PROXY', 'PROXY_REMAINS_VALID'])
+        .default('SHAREHOLDER_REVOKES_PROXY'),
     })
-    .default({ allowed: true, lodgementDeadlineHours: 72, maxPerProxy: null, canSpeak: false }),
+    .default({
+      allowed: true,
+      lodgementDeadlineHours: 72,
+      maxPerProxy: null,
+      canSpeak: false,
+      shareholderPresencePrecedence: 'SHAREHOLDER_REVOKES_PROXY',
+    }),
   corporateRep: z.object({ requireBoardResolution: z.boolean().default(true) }).default({ requireBoardResolution: true }),
   results: z
     .object({ visibility: z.enum(['STAFF_AFTER_CLOSE', 'ALL_AFTER_RELEASE']).default('ALL_AFTER_RELEASE'), showWeights: z.boolean().default(true) })

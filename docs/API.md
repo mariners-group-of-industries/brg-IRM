@@ -133,4 +133,65 @@ All paths are under `/companies/:companyId/meetings`.
 | POST | `/participant/meetings/:id/register` | `{ key }` from `eligibility`. Idempotent. |
 | GET | `/participant/meetings/:id/documents/:docId` | Published documents only |
 
-Request and response TypeScript types are in `packages/shared/src/api-types.ts`, `shareholder-types.ts` and `meeting-types.ts`.
+Request and response TypeScript types are in `packages/shared/src/api-types.ts`, `shareholder-types.ts`, `meeting-types.ts`, `live-types.ts`, and `voting-types.ts`.
+
+## Endpoints (Phase D: Live AGM)
+
+All company-scoped paths are under `/companies/:companyId/meetings/:mid/live`.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/attendance` | `attendance.read` | Real-time headcount and voting-weight totals |
+| POST | `/active-item` | `agenda.manage` | `{ agendaItemId }` sets current live agenda item |
+| POST | `/stages` | `agenda.manage` | `{ agendaItemId, stage: PROPOSAL\|SECONDING\|POLL_DEMAND, open: boolean }` |
+| POST | `/announcements` | `meeting.control` | `{ message, priority? }` |
+| POST | `/motions/:stage/decide` | `meeting.control` | `{ motionId, decision: ACCEPT\|REJECT }` (in COLLECT_ALL mode) |
+| GET | `/moderation` | `moderation.review` | Filter by status, search, kind, language |
+| POST | `/moderation/:kind/:id/decision` | `moderation.review` | `{ decision: APPROVE\|REJECT\|FORWARD_TO_BOARD, rejectionReason? }` |
+
+Participant live paths under `/participant/meetings/:mid/live`:
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/join`, `/leave`, `/heartbeat` | Real-time presence tracking |
+| GET | `/events` | Server-Sent Events (SSE) notification stream |
+| POST | `/motion` | `{ agendaItemId, stage: PROPOSAL\|SECONDING }` |
+| POST | `/poll-demand` | `{ agendaItemId }` |
+| POST | `/question` | `{ agendaItemId?, body, language? }` |
+| POST | `/audio-question` | Multipart upload (WebM, OGG, MP4, WAV, max 10 MB, 1-180 s) |
+
+## Endpoints (Phase E: Secure Voting)
+
+### Voting Sessions & Tally (Staff)
+
+All paths are under `/companies/:companyId/meetings/:mid/voting/sessions`.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| POST | `/` | `vote.manage` | `{ resolutionId, title, votingMethod, choices, allowVoteChange?, closeAfterMinutes? }` |
+| GET | `/` | `vote.read` | Lists all voting sessions for the meeting |
+| GET | `/:id` | `vote.read` | Details of a session; tallies masked before release |
+| POST | `/:id/close` | `vote.manage` | Closes session, computes deterministic BigInt tally, seals results |
+| POST | `/:id/release` | `vote.release` | Releases sealed results to board and participants |
+| GET | `/:id/audit` | `vote.audit.read` | Session audit events |
+| GET | `/:id/audit/verify` | `vote.audit.read` | Verifies SHA-256 cryptographic hash-chain integrity |
+
+### Scrutineer Access & Four-Eyes Grants (Staff)
+
+All paths are under `/companies/:companyId/meetings/:mid/privileged-grants`.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/` | `vote.scrutineer.audit` or `company.admin` | Lists access requests and decisions |
+| POST | `/` | `vote.scrutineer.audit` or `company.admin` | Request grant: `{ granteeUserId, justification, durationMinutes }` |
+| POST | `/:id/decision` | `company.admin` | Approve or reject. Self-approval blocked by 4-eyes rule. |
+| GET | `/:id/ballots` | `vote.scrutineer.audit` | Inspect individual ballots. Requires active, approved, unexpired grant. Fully audited. |
+
+### Participant Voting
+
+Participant paths under `/participant/meetings/:mid/live`:
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/vote` | Cast ballot. Header `Idempotency-Key` supported. Body: `{ votingSessionId, choice?, splitChoices? }`. Revokes proxy or enforces precedence according to rules. |
+| GET | `/results` | Fetches released voting results. Returns 404/empty prior to release. |

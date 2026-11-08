@@ -207,12 +207,35 @@ function RulesForm() {
             <Input id="audio" type="number" min={120} max={180} value={rules.audioQuestionMaxSeconds} onChange={(e) => set('audioQuestionMaxSeconds', Number(e.target.value))} />
           </Field>
         </div>
-        <Field label="Results visibility" htmlFor="visibility">
-          <Select id="visibility" value={rules.results.visibility} onChange={(e) => set('results', { ...rules.results, visibility: e.target.value as MeetingRules['results']['visibility'] })}>
-            <option value="ALL_AFTER_RELEASE">Everyone, after the meeting admin releases them</option>
-            <option value="STAFF_AFTER_CLOSE">Staff only, once voting closes</option>
+        <Field label="When grantor shareholder attends or votes directly" htmlFor="proxyPrecedence">
+          <Select
+            id="proxyPrecedence"
+            value={rules.proxy.shareholderPresencePrecedence}
+            onChange={(e) =>
+              set('proxy', {
+                ...rules.proxy,
+                shareholderPresencePrecedence: e.target.value as MeetingRules['proxy']['shareholderPresencePrecedence'],
+              })
+            }
+          >
+            <option value="SHAREHOLDER_REVOKES_PROXY">Shareholder attendance or direct vote suspends proxy</option>
+            <option value="PROXY_REMAINS_VALID">Proxy remains valid unless revoked</option>
           </Select>
         </Field>
+        <div className="flex flex-col gap-3">
+          <Field label="Results visibility" htmlFor="visibility">
+            <Select id="visibility" value={rules.results.visibility} onChange={(e) => set('results', { ...rules.results, visibility: e.target.value as MeetingRules['results']['visibility'] })}>
+              <option value="ALL_AFTER_RELEASE">Everyone, after the meeting admin releases them</option>
+              <option value="STAFF_AFTER_CLOSE">Staff only, once voting closes</option>
+            </Select>
+          </Field>
+          {check(
+            'Show vote counts and share weights to shareholders after release',
+            rules.results.showWeights,
+            (v) => set('results', { ...rules.results, showWeights: v }),
+            'When off, shareholders see only whether each resolution was carried or not carried.',
+          )}
+        </div>
       </fieldset>
       {editable && (
         <div className="flex justify-end border-t border-line px-5 py-3.5">

@@ -6,7 +6,7 @@ import type { BoardRoom, VideoJoinInfo } from '@irm/shared';
 import { Alert, Badge, EmptyState, Panel, PanelHeader, Skeleton } from '@irm/ui';
 import { VideoStage } from '@/components/video-stage';
 import { api } from '@/lib/api';
-import { formatDateTime, formatNumber, formatShares } from '@/lib/format';
+import { formatDateTime, formatNumber, formatShares, formatVotePct } from '@/lib/format';
 import { useMeetingEvents } from '@/lib/use-meeting-events';
 import { useCompany } from '../../../company-context';
 import { meetingKey, useMeeting } from '../meeting-context';
@@ -146,6 +146,83 @@ export default function MeetingBoardRoomPage() {
                   );
                 })}
               </ul>
+            )}
+          </Panel>
+
+          <Panel>
+            <PanelHeader
+              title="Resolution voting results"
+              description="Official results appear once released by the meeting admin."
+            />
+            {d.agenda.filter((a) => a.resolution).length === 0 ? (
+              <EmptyState title="No resolutions on this agenda" />
+            ) : (
+              <ol className="divide-y divide-line">
+                {d.agenda
+                  .filter((a) => a.resolution)
+                  .map((a) => {
+                    const itemSessions = d.votingSessions.filter((s) => s.agendaItemId === a.id);
+                    const latest = itemSessions[itemSessions.length - 1] ?? null;
+                    return (
+                      <li key={a.id} className="px-5 py-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-subtle text-xs font-semibold text-ink-2">
+                              {a.number}
+                            </span>
+                            <span className="font-medium text-ink">{a.title}</span>
+                          </div>
+                          {!latest ? (
+                            <Badge tone="neutral">Voting not opened</Badge>
+                          ) : !latest.closedAt ? (
+                            <Badge tone="accent" dot>
+                              Voting open
+                            </Badge>
+                          ) : latest.result ? (
+                            <Badge tone={latest.result.passed ? 'success' : 'warning'}>
+                              {latest.result.passed ? 'Carried' : 'Not carried'}
+                            </Badge>
+                          ) : (
+                            <Badge tone="warning">Waiting for release</Badge>
+                          )}
+                        </div>
+
+                        {latest?.result ? (
+                          <dl className="mt-3 grid gap-2 pl-8 text-xs sm:grid-cols-3">
+                            <div>
+                              <dt className="text-ink-3">For</dt>
+                              <dd className="font-medium text-ink tabular">
+                                {formatShares(latest.result.forVotes)} (
+                                {formatVotePct(latest.result.forVotes, latest.result.baseVotes)})
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-ink-3">Against</dt>
+                              <dd className="font-medium text-ink tabular">
+                                {formatShares(latest.result.againstVotes)} (
+                                {formatVotePct(latest.result.againstVotes, latest.result.baseVotes)})
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-ink-3">Abstain</dt>
+                              <dd className="font-medium text-ink tabular">
+                                {formatShares(latest.result.abstainVotes)}
+                              </dd>
+                            </div>
+                          </dl>
+                        ) : latest && !latest.closedAt ? (
+                          <p className="mt-2 pl-8 text-xs text-ink-3 tabular">
+                            {formatNumber(latest.ballotsCast)} ballots recorded so far
+                          </p>
+                        ) : latest?.closedAt ? (
+                          <p className="mt-2 pl-8 text-xs text-ink-3">
+                            Tally sealed. Results become visible to board members after release.
+                          </p>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+              </ol>
             )}
           </Panel>
         </div>

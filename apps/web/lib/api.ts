@@ -20,8 +20,13 @@ export function setCsrfToken(token: string | null): void {
 
 const BASE = '/api/v1';
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json' };
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  opts?: { headers?: Record<string, string> },
+): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json', ...(opts?.headers ?? {}) };
   const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
   if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   // A 401 from a sign-in step means wrong credentials or code, not an expired session:
@@ -67,7 +72,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
-  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
+  post: <T>(path: string, body?: unknown, opts?: { headers?: Record<string, string> }) =>
+    request<T>('POST', path, body ?? {}, opts),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   delete: <T>(path: string) => request<T>('DELETE', path),
