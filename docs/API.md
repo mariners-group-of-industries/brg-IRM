@@ -194,4 +194,32 @@ Participant paths under `/participant/meetings/:mid/live`:
 | Method | Path | Notes |
 |---|---|---|
 | POST | `/vote` | Cast ballot. Header `Idempotency-Key` supported. Body: `{ votingSessionId, choice?, splitChoices? }`. Revokes proxy or enforces precedence according to rules. |
-| GET | `/results` | Fetches released voting results. Returns 404/empty prior to release. |
+## Endpoints (Phase F: Reports and Minutes)
+
+### Official Reports (Staff)
+
+Paths under `/companies/:companyId/meetings/:mid/reports`:
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/:kind?format=pdf\|xlsx\|csv` | `meeting.read` | Generates official reports for `VOTING_RESULTS`, `ATTENDANCE`, `MOTIONS`, `QUESTIONS`, or `AUDIT`. Returns streaming binary attachments with format-specific MIME types and headers. |
+
+### Official Meeting Minutes (Staff)
+
+Paths under `/companies/:companyId/meetings/:mid/minutes`:
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/` | `meeting.read` | Fetches current minutes DTO (or null) and an auto-suggested markdown draft generated from meeting proceedings and voting outcomes. |
+| PUT | `/` | `meeting.update` | Saves or updates draft minutes content: `{ content }`. Status is `DRAFT`. |
+| POST | `/finalize` | `meeting.update` | Formally finalizes minutes: `{ signedBy }`. Status transitions to `FINAL`. |
+| POST | `/publish` | `meeting.update` | Publishes finalized minutes to participants: `{ publish: true\|false }`. |
+
+### Participant Outcomes (Shareholder Portal)
+
+Paths under `/participant/meetings/:mid`:
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/minutes` | Returns published meeting minutes for eligible company shareholders and representatives. |
+| GET | `/reports/voting-results` | Streams official certified Voting Results Tally Sheet PDF once results are released. |

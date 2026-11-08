@@ -50,6 +50,17 @@
 | Inspection audit logging | Every individual ballot inspection event by a scrutineer is logged to both `privileged_access_audit_logs` and platform `audit_logs`. | `voting.test.ts` |
 | Row-level security | `irm_app` RLS policies applied to `voting_sessions`, `voting_entitlements`, `ballots`, `voting_results`, `vote_audit_events`, `vote_idempotency_records`, and `privileged_access_grants`. | PostgreSQL migration `20261108103000_phase_e_voting` |
 
+## 2c. Implemented controls (Phase F: Reports and Hardening)
+
+| Control | Implementation | Verified by |
+|---|---|---|
+| Meeting minutes lifecycle guard | Transition from `COMPLETED` to `ARCHIVED` is blocked by server readiness check unless official meeting minutes are in `FINAL` or `PUBLISHED` status. | `meetings.service.ts`, `minutes.test.ts`, `meetings.test.ts` |
+| Minutes row-level security | `irm_app` RLS policies applied to `meeting_minutes` with company and tenant isolation. | `minutes.test.ts` (cross-tenant 404 assertion) |
+| Signee attribution | Minutes finalization requires explicit signee name/title, recorded with timestamp and actor attribution in audit trail. | `minutes.service.ts`, `minutes.test.ts` |
+| Tamper-evident backup drill | Backup script computes SHA-256 manifest checksums across all dumped tables; restore script verifies checksum integrity before database reconstruction. | `infrastructure/scripts/backup-db.mjs`, `infrastructure/scripts/restore-db.mjs` |
+| Report export isolation | Official governance report exports (PDF, XLSX, CSV) require explicit `meeting.read` permission within the caller's scoped company. | `reports.service.ts`, `reports.test.ts` |
+| Shareholder portal document boundary | Participants access only published minutes and released voting results for their authorized company meetings. | `PortalMinutesController`, `PortalReportsController`, `reports.test.ts` |
+
 ## 3. Planned controls
 
 | Phase | Control |

@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { CalendarClock, CheckCircle2, ChevronLeft, Download, FileText, MapPin, Video } from 'lucide-react';
-import { MEETING_DOCUMENT_KIND_LABELS, type MeetingDocumentDto, type PortalMeeting } from '@irm/shared';
+import { CalendarClock, CheckCircle2, ChevronLeft, Download, FileText, MapPin, Video, Award, BookOpen } from 'lucide-react';
+import { MEETING_DOCUMENT_KIND_LABELS, type MeetingDocumentDto, type PortalMeeting, type MeetingMinutesDto } from '@irm/shared';
 import { Alert, Badge, Button, Panel, PanelHeader, Skeleton } from '@irm/ui';
 import { BrandMark } from '@/components/brand';
 import { MeetingStateBadge } from '@/components/status';
@@ -36,6 +36,12 @@ export default function PortalMeetingPage() {
     Object.assign(document.createElement('a'), { href: url, download: d.fileName }).click();
     URL.revokeObjectURL(url);
   };
+
+  const minutesQuery = useQuery({
+    queryKey: ['portal-minutes', mid],
+    queryFn: () => api.get<MeetingMinutesDto>(`/participant/meetings/${mid}/minutes`).catch(() => null),
+    enabled: q.data?.state === 'COMPLETED' || q.data?.state === 'ARCHIVED',
+  });
 
   return (
     <div className="min-h-dvh bg-canvas text-[0.9375rem]">
@@ -160,6 +166,61 @@ export default function PortalMeetingPage() {
               <Panel className="mt-6">
                 <PanelHeader title="Notice of meeting" />
                 <div className="px-5 py-4 text-sm leading-relaxed whitespace-pre-line text-ink-2">{q.data.noticeText}</div>
+              </Panel>
+            )}
+
+            {(q.data.state === 'COMPLETED' || q.data.state === 'ARCHIVED') && (
+              <Panel className="mt-6">
+                <PanelHeader title="Official meeting documents & outcomes" />
+                <div className="space-y-4 px-5 py-4">
+                  <div className="flex flex-col gap-3 rounded-lg border border-line bg-canvas p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Award className="size-4 text-primary" aria-hidden />
+                        <span className="font-medium text-ink">Official Voting Results Sheet</span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-ink-3">
+                        Certified voting breakdown for all agenda items and formal resolution outcomes.
+                      </p>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => window.open(`/api/v1/participant/meetings/${mid}/reports/voting-results`, '_blank')}
+                      className="gap-1.5 shrink-0"
+                    >
+                      <Download className="size-3.5" aria-hidden /> Results PDF
+                    </Button>
+                  </div>
+
+                  {minutesQuery.data && (
+                    <div className="flex flex-col gap-3 rounded-lg border border-line bg-canvas p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="size-4 text-primary" aria-hidden />
+                          <span className="font-medium text-ink">Official Meeting Minutes</span>
+                          <Badge tone="success">Published</Badge>
+                        </div>
+                        <p className="mt-0.5 text-xs text-ink-3">
+                          Signed by {minutesQuery.data.signedBy || 'Board Chairman'}.
+                        </p>
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          const blob = new Blob([minutesQuery.data?.content || ''], { type: 'text/markdown;charset=utf-8' });
+                          const url = URL.createObjectURL(blob);
+                          Object.assign(document.createElement('a'), { href: url, download: `minutes-${mid}.md` }).click();
+                          URL.revokeObjectURL(url);
+                        }}
+                        className="gap-1.5 shrink-0"
+                      >
+                        <Download className="size-3.5" aria-hidden /> Minutes file
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </Panel>
             )}
           </>

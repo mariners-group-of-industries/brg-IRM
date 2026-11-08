@@ -36,6 +36,12 @@ import { VotingController } from './modules/voting/voting.controller.js';
 import { PortalVotingController } from './modules/voting/portal-voting.controller.js';
 import { PrivilegedGrantsController } from './modules/voting/privileged-grants.controller.js';
 import { VotingService } from './modules/voting/voting.service.js';
+import { MinutesController } from './modules/minutes/minutes.controller.js';
+import { PortalMinutesController } from './modules/minutes/portal-minutes.controller.js';
+import { MinutesService } from './modules/minutes/minutes.service.js';
+import { ReportsController } from './modules/reports/reports.controller.js';
+import { PortalReportsController } from './modules/reports/portal-reports.controller.js';
+import { ReportsService } from './modules/reports/reports.service.js';
 
 /**
  * Modular monolith root. Phase A wires the platform core. Later phases add
@@ -67,6 +73,10 @@ import { VotingService } from './modules/voting/voting.service.js';
     PortalLiveController,
     VotingController,
     PortalVotingController,
+    MinutesController,
+    PortalMinutesController,
+    ReportsController,
+    PortalReportsController,
   ],
   providers: [
     AuditService,
@@ -84,6 +94,8 @@ import { VotingService } from './modules/voting/voting.service.js';
     MeetingEventsService,
     VideoService,
     VotingService,
+    MinutesService,
+    ReportsService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

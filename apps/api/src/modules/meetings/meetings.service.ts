@@ -280,6 +280,21 @@ export class MeetingsService {
         detail: openVoting > 0 ? `${openVoting} voting session(s) remain open` : undefined,
       });
     }
+    if (m.state === 'COMPLETED' && to === 'ARCHIVED') {
+      const minutes = await tx.meetingMinutes.findUnique({ where: { meetingId: m.id } });
+      const hasFinalizedMinutes = !!minutes && (minutes.status === 'FINAL' || minutes.status === 'PUBLISHED');
+      checks.push({
+        key: 'minutesRecorded',
+        label: 'Meeting minutes are finalized or published',
+        ok: hasFinalizedMinutes,
+        blocking: true,
+        detail: !minutes
+          ? 'No minutes have been recorded'
+          : minutes.status === 'DRAFT'
+            ? 'Minutes are still in draft state'
+            : undefined,
+      });
+    }
     return checks;
   }
 

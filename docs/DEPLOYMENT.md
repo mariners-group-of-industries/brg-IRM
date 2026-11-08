@@ -56,12 +56,27 @@ The Phase B migration creates the NOLOGIN role `irm_app` and grants it to the mi
 
 `infrastructure/docker-compose.yml` provides PostgreSQL 18, plus Redis and MinIO for later phases.
 
-## Backups
+## Backups and Restore Drill Runbook (Phase F)
 
 - Use managed PostgreSQL with point-in-time recovery and at least 35 days of retention. Take a daily logical dump to separate encrypted storage.
 - Version object storage, with lifecycle rules matching statutory record retention.
-- Snapshot the database immediately before and after each meeting goes Live and Completed. This is a Phase F runbook.
-- Run a restore drill quarterly and before the first production meeting.
+- Snapshot the database immediately before and after each meeting goes Live and Completed.
+- Run a restore drill quarterly and before the first production meeting using the automated scripts in `infrastructure/scripts/`:
+
+### Database Backup Script (`infrastructure/scripts/backup-db.mjs`)
+Dumps all application tables into JSON format with table-level record counts and computes a cryptographic SHA-256 manifest checksum for tamper detection:
+```bash
+node infrastructure/scripts/backup-db.mjs [output-file.json]
+```
+If no output path is given, it creates a timestamped file in `infrastructure/backups/backup-<ISO>.json`.
+
+### Database Restore Drill Script (`infrastructure/scripts/restore-db.mjs`)
+Verifies manifest checksums before touching the database, safely truncates all tables in foreign-key dependency order, and re-inserts all records deterministically:
+```bash
+node infrastructure/scripts/restore-db.mjs infrastructure/backups/backup-<ISO>.json
+```
+
+Both scripts are verified and tested against the live embedded and test PostgreSQL instances.
 
 ## Operations checklist before the first real meeting
 

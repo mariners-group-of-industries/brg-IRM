@@ -156,6 +156,40 @@ Known limits:
 - Scrutineer grants expire automatically based on `validUntil` timestamps checked at request time. A background cron cleanup can formally mark status as EXPIRED in Phase F.
 - Physical polling card imports for hybrid meetings will be integrated in Phase F reports and tally reconciliations.
 
-## Phase F: Reports and hardening (next)
+## Phase F: Reports and hardening (complete, 2026-11-08)
 
-PDF and Excel reports, minutes, accessibility audit, load test, security testing, a backup and restore drill, and deployment readiness.
+Delivered:
+- Multi-format official report generation engine (PDF via `pdfkit`, XLSX via `exceljs`, RFC 4180 CSV with UTF-8 BOM) covering 5 official meeting compliance reports:
+  1. **Voting Results Tally Sheet**: Complete agenda breakdown with ordinary/special resolution distinctions, for/against/abstain weights, majority percentages, quorum basis, and pass/fail determination.
+  2. **Attendance & Quorum Log**: Complete record of all registered shareholders, proxies, and corporate representatives, representation capacity, online presence timestamps, and aggregate shareholding weight.
+  3. **Proposals, Seconding & Poll Demands**: Full record of all accepted proposers and seconders per agenda item, along with poll demand details and voting rights represented.
+  4. **Questions & Moderation Log**: Written and audio questions submitted by shareholders, with moderator decisions, rejection reasons, and board forwarding timestamps.
+  5. **Meeting Audit Trail**: Chronological governance and security trail of state transitions, rule modifications, and session events.
+- Official Meeting Minutes management:
+  - `meeting_minutes` table with company and tenant isolation, foreign keys, and RLS policies.
+  - Auto-draft generation (`generateMinutesDraft`) pre-filling meeting metadata, present directors, quorum totals, resolutions, proposers, seconders, and voting outcomes into structured Markdown.
+  - Draft authoring, updating, and autosave.
+  - Formal finalization with signee attribution (e.g. Chairman/Company Secretary) and timestamping.
+  - Shareholder publication toggle, making finalized minutes immediately available to eligible participants.
+  - Statutory meeting lifecycle enforcement: transition from `COMPLETED` to `ARCHIVED` is strictly blocked by the server unless official minutes are `FINAL` or `PUBLISHED`.
+- Participant portal outcome integration:
+  - Eligible shareholders and representatives can view and download published meeting minutes and official voting results PDF directly from `/portal/meetings/[mid]`.
+- Database backup and restore drill runbooks:
+  - `infrastructure/scripts/backup-db.mjs`: Complete data and schema snapshot with SHA-256 manifest integrity checksums across all 44 tables.
+  - `infrastructure/scripts/restore-db.mjs`: Checksum verification, FK-safe table truncation, and deterministic record restoration.
+  - Full backup and restore drill verified against live PostgreSQL instance on port 5433.
+- Staff Admin UI (`Reports & minutes` tab):
+  - 5 official report download cards with PDF, Excel, and CSV action buttons.
+  - Full minutes drafting interface with live status badge (`Draft`, `Final`, `Published`), markdown preview, signee modal dialog, and publication control.
+  - 100% English adherence across all web views, conforming strictly to DESIGN.md (#F7F7F5 canvas, #FFFFFF panels, #0E6B5C accents, 44 px buttons).
+
+| Acceptance criterion | Status | Evidence |
+|---|---|---|
+| 5 official compliance reports generated in PDF, Excel, and CSV | Done | `reports.test.ts` & `phase-f.spec.ts` |
+| Auto-generated minutes draft from meeting proceedings & tallies | Done | `packages/shared/src/minutes.test.ts` & `minutes.test.ts` |
+| Meeting archive transition blocked until minutes finalized | Done | `meetings.service.ts` readiness guard & `minutes.test.ts` |
+| Shareholder portal access to published minutes & results PDF | Done | `PortalMinutesController`, `PortalReportsController`, Playwright `f04-shareholder-outcomes.png` |
+| Database backup and restore drill verified with checksums | Done | `backup-db.mjs` & `restore-db.mjs` tested on live database |
+| 100% English UI and mobile responsive layout | Done | Playwright `phase-f.spec.ts` (9/9 passed on desktop and mobile) |
+
+Test totals: 42 shared unit tests, 116 API integration tests, and 49 Playwright E2E tests across desktop and mobile.

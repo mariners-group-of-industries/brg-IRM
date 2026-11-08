@@ -109,6 +109,8 @@ describe('meeting management', () => {
     await go(meetingAdmin, m.id, 'LIVE', 200);
     await go(meetingAdmin, m.id, 'COMPLETED', 200);
     await go(meetingAdmin, m.id, 'ARCHIVED', 403);
+    // Phase F guard: meeting minutes must be finalized before archiving
+    await admin.post(`${base()}/${m.id}/minutes/finalize`, { signedBy: 'Mahmudul Hasan (Chairman)' }).expect(201);
     const archived = (await go(admin, m.id, 'ARCHIVED', 200)).body;
     expect(archived.state).toBe('ARCHIVED');
     const history = (await admin.get(`${base()}/${m.id}/control`).expect(200)).body.history;

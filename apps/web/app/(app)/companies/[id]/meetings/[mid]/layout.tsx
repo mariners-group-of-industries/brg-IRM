@@ -42,6 +42,9 @@ export default function MeetingLayout({ children }: { children: React.ReactNode 
     ...(can('authorization.manage', c.scope) || can('voting.results.read', c.scope)
       ? [{ href: `${base}/grants`, label: 'Scrutineer access' }]
       : []),
+    ...(can('report.generate', c.scope) || can('meeting.read', c.scope)
+      ? [{ href: `${base}/reports`, label: 'Reports & minutes' }]
+      : []),
   ];
 
   return (

@@ -690,6 +690,7 @@ model Meeting {
   votingSessions   VotingSession[]
   votingResults    VotingResult[]
   privilegedGrants PrivilegedAccessGrant[]
+  minutes          MeetingMinutes?
 
   @@index([companyId, scheduledStart])
   @@map("meetings")
@@ -1233,4 +1234,30 @@ model PrivilegedAccessGrant {
 
   @@index([companyId, meetingId, granteeUserId, status])
   @@map("privileged_access_grants")
+}
+
+enum MeetingMinutesStatus {
+  DRAFT
+  FINAL
+  PUBLISHED
+}
+
+model MeetingMinutes {
+  id          String               @id @default(uuid(7)) @db.Uuid
+  tenantId    String               @map("tenant_id") @db.Uuid
+  companyId   String               @map("company_id") @db.Uuid
+  meetingId   String               @unique @map("meeting_id") @db.Uuid
+  content     String               @db.Text
+  status      MeetingMinutesStatus @default(DRAFT)
+  signedBy    String?              @map("signed_by") @db.VarChar(200)
+  finalizedAt DateTime?            @map("finalized_at") @db.Timestamptz(3)
+  publishedAt DateTime?            @map("published_at") @db.Timestamptz(3)
+  createdById String?              @map("created_by_id") @db.Uuid
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, meetingId])
+  @@map("meeting_minutes")
 }

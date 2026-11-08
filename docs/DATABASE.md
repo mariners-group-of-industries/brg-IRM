@@ -180,6 +180,14 @@ Ballot choices are readable only by the voting module's tally function and by a 
 
 `meeting_comments` (text, language, status), `audio_questions` (object key, duration, mime, size, status), `moderation_actions` (append-only: approve, reject, forward, note), `meeting_announcements` and `meeting_documents` (object keys in private storage, checksum, uploader).
 
+### 2.5 Reports and Minutes (Phase F)
+
+| Entity | Notes |
+|---|---|
+| `meeting_minutes` | Official minutes record for a meeting. Contains Markdown `content`, `status` (`DRAFT`, `FINAL`, `PUBLISHED`), `signed_by`, `finalized_at`, `published_at`, and `created_by_id`. Unique on `meeting_id`. Enforced by composite foreign keys `(company_id, tenant_id)` to `companies` and `(meeting_id, company_id)` to `meetings`. RLS policy restricts queries to the active company under `irm_app`. |
+
+Transition guard: a meeting in `COMPLETED` state cannot be moved to `ARCHIVED` until `meeting_minutes` exists with status `FINAL` or `PUBLISHED`.
+
 ## 3. Isolation strategy
 
 1. Every company-owned table has `tenant_id` and `company_id`, with a composite FK to `companies(id, tenant_id)`.

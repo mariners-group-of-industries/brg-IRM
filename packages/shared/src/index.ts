@@ -12,3 +12,5 @@ export * from './live.js';
 export * from './live-types.js';
 export * from './voting.js';
 export * from './voting-types.js';
+export * from './report-types.js';
+export * from './minutes-types.js';
