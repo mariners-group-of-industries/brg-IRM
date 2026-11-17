@@ -1,0 +1,232 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ------------------------------------------------------------------ */
+/*  BRG1 IRM — design tokens                                            */
+/*  Brand palette (light-first):                                       */
+/*    navy text #17243B · action #182B49 · teal accent #0F8A80         */
+/*    background #F8FAFC · surface #FFFFFF · border #E5EAF0             */
+/*    secondary text #64748B                                           */
+/* ------------------------------------------------------------------ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
+  --color-danger-soft: var(--danger-soft);
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-navy-hover: var(--brand-navy-hover);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-sans: var(--font-sans);
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
+}
+
+:root {
+  --font-sans: "Inter Variable", "Noto Sans Bengali Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --background: #f8fafc;
+  --foreground: #17243b;
+  --card: #ffffff;
+  --card-foreground: #17243b;
+  --popover: #ffffff;
+  --popover-foreground: #17243b;
+
+  --primary: #182b49;
+  --primary-foreground: #ffffff;
+
+  --secondary: #eef1f6;
+  --secondary-foreground: #1f2d47;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #eef2f7;
+  --accent-foreground: #17243b;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --danger-soft: #fef2f2;
+
+  --border: #e5eaf0;
+  --input: #e5eaf0;
+  --ring: #182b49;
+
+  /* Brand */
+  --brand: #0f8a80;
+  --brand-foreground: #ffffff;
+  --brand-soft: #ecf8f6;
+  --brand-navy: #182b49;
+  --brand-navy-hover: #1f3560;
+
+  /* Semantic */
+  --success: #15803d;
+  --success-foreground: #ffffff;
+  --success-soft: #f0f9f1;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+  --warning-soft: #fffbeb;
+  --info: #1d4ed8;
+  --info-foreground: #ffffff;
+  --info-soft: #eff6ff;
+
+  /* Sidebar */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #3f4c63;
+  --sidebar-primary: #182b49;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef2f9;
+  --sidebar-accent-foreground: #17243b;
+  --sidebar-border: #e5eaf0;
+  --sidebar-ring: #182b49;
+
+  /* Charts — muted, professional series */
+  --chart-1: #182b49;
+  --chart-2: #0f8a80;
+  --chart-3: #64748b;
+  --chart-4: #b45309;
+  --chart-5: #94a3b8;
+
+  --radius: 0.625rem;
+
+  --shadow-xs: 0 1px 2px 0 rgb(23 36 59 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(23 36 59 / 0.07), 0 1px 2px -1px rgb(23 36 59 / 0.05);
+  --shadow-md: 0 4px 12px -2px rgb(23 36 59 / 0.1), 0 2px 4px -2px rgb(23 36 59 / 0.06);
+}
+
+.dark {
+  --background: #0e1626;
+  --foreground: #e6eaf2;
+  --card: #141e33;
+  --card-foreground: #e6eaf2;
+  --popover: #141e33;
+  --popover-foreground: #e6eaf2;
+  --primary: #e6eaf2;
+  --primary-foreground: #141e33;
+  --secondary: #1b2740;
+  --secondary-foreground: #e6eaf2;
+  --muted: #1b2740;
+  --muted-foreground: #94a3b8;
+  --accent: #1b2740;
+  --accent-foreground: #e6eaf2;
+  --destructive: #f87171;
+  --destructive-foreground: #141e33;
+  --danger-soft: #2a1518;
+  --border: #233252;
+  --input: #233252;
+  --ring: #94a3b8;
+  --brand: #2dd4bf;
+  --brand-foreground: #0e1626;
+  --brand-soft: #12312d;
+  --brand-navy: #22304f;
+  --brand-navy-hover: #2b3d63;
+  --success: #4ade80;
+  --success-foreground: #0e1626;
+  --success-soft: #10251a;
+  --warning: #fbbf24;
+  --warning-foreground: #0e1626;
+  --warning-soft: #2a2210;
+  --info: #93c5fd;
+  --info-foreground: #0e1626;
+  --info-soft: #101f33;
+  --sidebar: #141e33;
+  --sidebar-foreground: #aab4c8;
+  --sidebar-primary: #e6eaf2;
+  --sidebar-primary-foreground: #141e33;
+  --sidebar-accent: #1b2740;
+  --sidebar-accent-foreground: #e6eaf2;
+  --sidebar-border: #233252;
+  --sidebar-ring: #94a3b8;
+  --chart-1: #93c5fd;
+  --chart-2: #2dd4bf;
+  --chart-3: #94a3b8;
+  --chart-4: #fbbf24;
+  --chart-5: #64748b;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-feature-settings: "cv02", "cv03", "cv04";
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+}
+
+@utility shadow-card {
+  box-shadow: var(--shadow-xs);
+}
+@utility shadow-lift {
+  box-shadow: var(--shadow-sm);
+}
+@utility shadow-overlay {
+  box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

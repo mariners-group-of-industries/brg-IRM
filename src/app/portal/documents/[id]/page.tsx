@@ -1,0 +1,7 @@
+import Link from "next/link";
+import { notFound,redirect } from "next/navigation";
+import { getPortalSession } from "@/lib/portal-session";
+import { getPortalLocale } from "@/lib/portal-locale";
+import { portalTranslator } from "@/lib/portal-i18n";
+import { portalDocument } from "@/lib/meeting-documents";
+export default async function DocumentPage({params}:{params:Promise<{id:string}>}){const session=await getPortalSession();if(!session)redirect('/portal/login');const{id}=await params;const doc=portalDocument(session.participantId,id);if(!doc)notFound();const t=portalTranslator(await getPortalLocale());return <div className="space-y-5"><Link href="/portal/documents" className="text-sm text-brand hover:underline">← {t('Back to documents')}</Link><div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold">{t(doc.title)}</h1><a href={`/api/documents/${doc.id}?download=1`} className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">{t('Download')}</a></div>{doc.mimeType==='text/plain'?<article className="whitespace-pre-wrap rounded-xl border border-border bg-card p-6 text-sm leading-7">{doc.text??new TextDecoder().decode(doc.content)}</article>:<><a href={`/api/documents/${doc.id}`} target="_blank" rel="noopener noreferrer" className="text-sm text-brand hover:underline">{t('Open PDF')}</a><iframe title={t('PDF preview')} src={`/api/documents/${doc.id}`} className="h-[75vh] w-full rounded-xl border border-border bg-card"/></>}</div>;}

@@ -1,0 +1,22 @@
+﻿import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { getPortalSession } from "@/lib/portal-session";
+import { getPortalDashboard } from "@/lib/portal-dashboard";
+import { getPortalLocale } from "@/lib/portal-locale";
+import { portalTranslator } from "@/lib/portal-i18n";
+import { portalMeetingDate,portalMeetingTime } from "@/lib/portal-format";
+import { portalDocuments } from "@/lib/meeting-documents";
+import { MeetingNextAction,PortalPhaseBadge } from "@/components/portal/meeting-state";
+import { PortalDocuments } from "@/components/portal/documents";
+import { RegisterButton } from "@/components/portal/register-button";
+export const metadata={title:'Meeting details'};
+export default async function PortalMeetingDetailPage({params}:{params:Promise<{id:string}>}){
+ const session=await getPortalSession();if(!session)redirect('/portal/login');const{id}=await params;
+ const data=getPortalDashboard(session.participantId);const summary=data?.meetings.find(m=>m.meeting.id===id);if(!data||!summary)notFound();
+ const{meeting}=summary;const locale=await getPortalLocale();const t=portalTranslator(locale);const number=(n:number)=>new Intl.NumberFormat(locale==='bn'?'bn-BD':'en-BD').format(n);
+ return <div className="space-y-5"><Link href="/portal/meetings" className="text-sm text-brand hover:underline">← {t('Back to your meetings')}</Link><header><div className="mb-3 flex items-center gap-2"><span className="rounded-md bg-muted px-2 py-1 text-xs">{meeting.type}</span><PortalPhaseBadge phase={summary.phase}/></div><h1 className="text-2xl font-semibold">{locale==='bn'&&meeting.titleBn?meeting.titleBn:meeting.title}</h1><p className="mt-2 text-sm text-muted-foreground">{data.company.name} · {meeting.financialYear}</p></header><MeetingNextAction summary={summary}/>
+ <section className="rounded-xl border border-border bg-card p-5"><h2 className="mb-4 text-base font-semibold">{t('Meeting facts')}</h2><dl className="grid gap-4 text-sm sm:grid-cols-2">{[[t('Date & time'),`${portalMeetingDate(meeting.date,meeting.timezone,locale)} · ${portalMeetingTime(meeting.date,meeting.timezone,locale)}`],[t('Timezone'),meeting.timezone],[t('Venue'),meeting.venue],[t('Record date'),portalMeetingDate(meeting.recordDate,meeting.timezone,locale)],[t('Voting'),meeting.votingMethod.replaceAll('_',' ')],[t('Company'),data.company.name]].map(([label,value])=><div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 leading-6">{value}</dd></div>)}</dl><p className="mt-4 text-xs leading-5 text-muted-foreground">{meeting.pollDemandRule}</p></section>
+ <section className="rounded-xl border border-brand/25 bg-brand-soft/40 p-5"><h2 className="text-base font-semibold">{t('Your eligibility')}</h2><p className="mt-2 text-sm">{session.subjectName} · {data.identity.maskedBoId}</p><div className="my-4 flex gap-8"><div><p className="text-xs text-muted-foreground">{t('Shares')}</p><p className="text-xl font-semibold">{number(summary.shares)}</p></div><div><p className="text-xs text-muted-foreground">{t('Votes')}</p><p className="text-xl font-semibold">{number(summary.votingRights)}</p></div></div><div className="flex flex-wrap gap-3">{summary.availability==='available'&&<RegisterButton meetingId={meeting.id} initiallyRegistered={false} closed={false}/>} {summary.registered&&<span className="self-center text-sm text-success">✓ {t('Registered')}</span>}{summary.canEnter&&<Link href={`/portal/meetings/${meeting.id}/room`} className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">{t(summary.phase==='waiting'?'Join waiting room':'Join meeting')}</Link>}</div></section>
+ <section id="agenda" className="scroll-mt-32 rounded-xl border border-border bg-card"><h2 className="border-b border-border p-5 text-base font-semibold">{t('Agenda')}</h2><ol className="divide-y divide-border">{meeting.agenda.map(a=><li key={a.id} className="flex gap-3 p-5"><span className="text-sm text-brand">{number(a.order)}.</span><div><p className="text-sm font-medium leading-6">{locale==='bn'&&a.titleBn?a.titleBn:a.title}</p><p className="mt-1 text-xs text-muted-foreground">{t(a.kind==='special'?'Special resolution':'Ordinary resolution')} · {t(a.status)}</p></div></li>)}</ol></section>
+ <section id="documents" className="scroll-mt-32 space-y-3"><h2 className="text-base font-semibold">{t('Published documents')}</h2><PortalDocuments documents={portalDocuments(session.participantId,meeting.id)}/></section></div>;
+}

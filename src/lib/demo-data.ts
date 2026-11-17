@@ -1,0 +1,291 @@
+/**
+ * Demo dataset — BRG1 IRM development mode.
+ *
+ * Everything in this file is fictional demonstration content for a small
+ * group of Bangladeshi public companies. It is isolated on purpose:
+ * when the database is wired up (Phase 3+), these repositories are the
+ * only thing that changes. Never mix demo data with production data.
+ */
+import type {
+  ActivityItem,
+  ApprovalItem,
+  AppNotification,
+  AuditEntry,
+  Company,
+  DemoParticipant,
+  Meeting,
+} from "./types";
+
+export const DEMO_COMPANIES: Company[] = [
+  {
+    id: "co_meghna",
+    name: "Meghna Textiles Limited",
+    shortName: "Meghna Textiles",
+    registrationNo: "C-128934/2011",
+    tin: "100234567-0203",
+    sector: "Textiles & RMG",
+    type: "Public Limited",
+    listed: true,
+    shareClasses: ["Ordinary"],
+    paidUpCapital: 850_000_000,
+    totalShareholders: 12_480,
+  },
+  {
+    id: "co_delta",
+    name: "Delta Pharmaceuticals Limited",
+    shortName: "Delta Pharma",
+    registrationNo: "C-094812/2004",
+    tin: "100192837-0201",
+    sector: "Pharmaceuticals",
+    type: "Public Limited",
+    listed: true,
+    shareClasses: ["Ordinary", "Preference"],
+    paidUpCapital: 1_420_000_000,
+    totalShareholders: 21_340,
+  },
+  {
+    id: "co_karnaphuli",
+    name: "Karnaphuli Cement Company Limited",
+    shortName: "Karnaphuli Cement",
+    registrationNo: "C-152377/2016",
+    tin: "100312987-0209",
+    sector: "Cement",
+    type: "Public Limited",
+    listed: true,
+    shareClasses: ["Ordinary"],
+    paidUpCapital: 640_000_000,
+    totalShareholders: 8_120,
+  },
+  {
+    id: "co_padma",
+    name: "Padma Agro Industries Limited",
+    shortName: "Padma Agro",
+    registrationNo: "C-071245/1998",
+    tin: "100112233-0205",
+    sector: "Agro & Food",
+    type: "Private Limited",
+    listed: false,
+    shareClasses: ["Ordinary"],
+    paidUpCapital: 120_000_000,
+    totalShareholders: 340,
+  },
+];
+
+export const DEMO_MEETINGS: Meeting[] = [
+  {
+    id: "mtg_agm_2026",
+    proxiesAllowed: true,
+    corporateRepresentatives: true,
+    proxyLimitPerHolder: 1,
+    proxyDeadline: "2026-12-09T11:00:00.000Z",
+    registrationOpens: "2026-11-01T00:00:00.000Z",
+    registrationCloses: "2026-12-12T04:00:00.000Z",
+    shareClassId: "Ordinary",
+    votingEntitlement: "one_share_one_vote",
+    companyId: "co_meghna",
+    type: "AGM",
+    title: "23rd Annual General Meeting",
+    financialYear: "FY 2025–26",
+    date: "2026-12-12T04:00:00.000Z", // 10:00 BST
+    timezone: "Asia/Dhaka",
+    mode: "hybrid",
+    venue: "AGM Hall, Gulshan Club, Dhaka + live video",
+    status: "scheduled",
+    recordDate: "2026-11-20T00:00:00.000Z",
+    eligibleShareholders: 12_480,
+    registered: 1_842,
+    attended: 0,
+    noticePublished: true,
+    votingMethod: "hybrid",
+    pollDemandRule: "Shares carrying ≥ 10% of voting rights",
+    votingOpen: false,
+    pollDemandOpen: false,
+    agenda: [
+      { id: "ag1", order: 1, title: "Adoption of audited financial statements for FY 2025–26", titleBn: "২০২৫–২৬ অর্থবছরের হিসাব ও নিরীক্ষা প্রতিবেদন গ্রহণ", kind: "ordinary", resolution: "Resolution 1 — Audited accounts", status: "pending" },
+      { id: "ag2", order: 2, title: "Declaration of final dividend of 12%", titleBn: "১২% চূড়ান্ত লভ্যাংশ ঘোষণা", kind: "ordinary", resolution: "Resolution 2 — Final dividend", status: "pending" },
+      { id: "ag3", order: 3, title: "Re-appointment of Rahman Rahman Huq & Co. as statutory auditors", titleBn: "বিধিবদ্ধ নিরীক্ষা প্রতিষ্ঠান হিসেবে রহমান রহমান হুক অ্যান্ড কোম্পানিকে পুনঃনিয়োগ", kind: "ordinary", resolution: "Resolution 3 — Auditor re-appointment", status: "pending" },
+      { id: "ag4", order: 4, title: "Appointment of directors in place of retiring directors", titleBn: "বিদায়মান পরিচালকদের স্থলে পরিচালক নিয়োগ", kind: "ordinary", resolution: "Resolution 4 — Director appointment", status: "pending" },
+      { id: "ag5", order: 5, title: "Alteration of Memorandum of Association — object clause", titleBn: "স্মারকের উদ্দেশ্যধারা সংশোধন", kind: "special", resolution: "Resolution 5 — Special resolution", status: "pending" },
+    ],
+  },
+  {
+    id: "mtg_egm_bonus",
+    registrationOpens: "2026-11-01T00:00:00.000Z",
+    registrationCloses: "2026-11-28T03:30:00.000Z",
+    proxiesAllowed: true,
+    corporateRepresentatives: true,
+    proxyLimitPerHolder: 2,
+    proxyDeadline: "2026-11-25T11:00:00.000Z",
+    shareClassId: "Ordinary",
+    votingEntitlement: "one_share_one_vote",
+    companyId: "co_meghna",
+    type: "EGM",
+    title: "EGM — Bonus Share Issue",
+    financialYear: "FY 2025–26",
+    date: "2026-11-28T04:00:00.000Z",
+    timezone: "Asia/Dhaka",
+    mode: "virtual",
+    venue: "Live video conference",
+    status: "notice_sent",
+    recordDate: "2026-11-22T00:00:00.000Z",
+    eligibleShareholders: 12_480,
+    registered: 640,
+    attended: 0,
+    noticePublished: true,
+    votingMethod: "poll",
+    pollDemandRule: "Shares carrying ≥ 5% of voting rights",
+    agenda: [
+      { id: "ag1", order: 1, title: "Issuance of bonus shares in the ratio of 1:4", kind: "special", resolution: "Resolution 1 — Bonus issue", status: "pending" },
+      { id: "ag2", order: 2, title: "Capitalisation of retained earnings of ৳212.5 crore", kind: "special", resolution: "Resolution 2 — Capitalisation", status: "pending" },
+    ],
+  },
+  {
+    id: "mtg_agm_delta_2026",
+    proxiesAllowed: true,
+    corporateRepresentatives: true,
+    proxyLimitPerHolder: 1,
+    proxyDeadline: "2027-01-15T11:00:00.000Z",
+    shareClassId: "Ordinary",
+    votingEntitlement: "one_share_one_vote",
+    companyId: "co_delta",
+    type: "AGM",
+    title: "31st Annual General Meeting",
+    financialYear: "FY 2025–26",
+    date: "2027-01-18T04:30:00.000Z",
+    timezone: "Asia/Dhaka",
+    mode: "physical",
+    venue: "Delta Auditorium, Tongi, Gazipur",
+    status: "notice_pending",
+    recordDate: "2027-01-05T00:00:00.000Z",
+    eligibleShareholders: 21_340,
+    registered: 0,
+    attended: 0,
+    noticePublished: false,
+    votingMethod: "hybrid",
+    pollDemandRule: "Shares carrying ≥ 10% of voting rights",
+    agenda: [
+      { id: "ag1", order: 1, title: "Adoption of audited financial statements for FY 2025–26", kind: "ordinary", status: "pending" },
+      { id: "ag2", order: 2, title: "Approval of cash dividend and stock dividend", kind: "ordinary", status: "pending" },
+      { id: "ag3", order: 3, title: "Fixation of remuneration of independent directors", kind: "special", status: "pending" },
+    ],
+  },
+  {
+    id: "mtg_egm_cement",
+    companyId: "co_karnaphuli",
+    type: "EGM",
+    title: "EGM — Rights Share Offer",
+    financialYear: "FY 2025–26",
+    date: "2026-10-30T04:00:00.000Z",
+    timezone: "Asia/Dhaka",
+    mode: "hybrid",
+    venue: "Karnaphuli Cement HO, Chattogram + live video",
+    status: "completed",
+    recordDate: "2026-10-12T00:00:00.000Z",
+    eligibleShareholders: 8_120,
+    registered: 1_965,
+    attended: 1_402,
+    noticePublished: true,
+    votingMethod: "poll",
+    pollDemandRule: "Per Articles 52: any member present may demand a poll",
+    agenda: [
+      { id: "ag1", order: 1, title: "Rights issue of 2 crore shares at ৳30 (including premium)", kind: "special", resolution: "Resolution 1 — Rights issue", status: "passed" },
+      { id: "ag2", order: 2, title: "Increase of authorised share capital", kind: "special", resolution: "Resolution 2 — Share capital", status: "passed" },
+    ],
+  },
+  {
+    id: "mtg_agm_meghna_2025",
+    companyId: "co_meghna",
+    type: "AGM",
+    title: "22nd Annual General Meeting",
+    financialYear: "FY 2024–25",
+    date: "2025-12-14T04:00:00.000Z",
+    timezone: "Asia/Dhaka",
+    mode: "hybrid",
+    venue: "AGM Hall, Gulshan Club, Dhaka + live video",
+    status: "completed",
+    recordDate: "2025-11-25T00:00:00.000Z",
+    eligibleShareholders: 11_940,
+    registered: 2_310,
+    attended: 1_748,
+    noticePublished: true,
+    votingMethod: "hybrid",
+    pollDemandRule: "Shares carrying ≥ 10% of voting rights",
+    agenda: [],
+  },
+  {
+    id: "mtg_agm_cement_2024",
+    companyId: "co_karnaphuli",
+    type: "AGM",
+    title: "19th Annual General Meeting",
+    financialYear: "FY 2024–25",
+    date: "2025-11-09T04:00:00.000Z",
+    timezone: "Asia/Dhaka",
+    mode: "physical",
+    venue: "Karnaphuli Cement HO, Chattogram",
+    status: "archived",
+    recordDate: "2025-10-30T00:00:00.000Z",
+    eligibleShareholders: 7_860,
+    registered: 1_480,
+    attended: 1_090,
+    noticePublished: true,
+    votingMethod: "show_of_hands",
+    pollDemandRule: "Per Articles 52",
+    agenda: [],
+  },
+];
+
+export const DEMO_ACTIVITY: ActivityItem[] = [
+  { id: "ac1", at: "2026-11-17T02:20:00.000Z", actor: "Nusrat Jahan (Company Secretary)", action: "Published notice for", target: "Meghna Textiles — AGM, FY 2025–26", tone: "success" },
+  { id: "ac2", at: "2026-11-17T01:10:00.000Z", actor: "Rakib Ahmed (Registrar)", action: "Imported shareholder register v3 —", target: "12,480 records, 14 rejected", tone: "info" },
+  { id: "ac3", at: "2026-11-16T11:45:00.000Z", actor: "Nusrat Jahan (Company Secretary)", action: "Requested approval —", target: "Notice of EGM: Bonus Share Issue", tone: "warning" },
+  { id: "ac4", at: "2026-11-16T08:30:00.000Z", actor: "System (demo)", action: "Snapshot created for", target: "Karnaphuli Cement — EGM rights issue", tone: "info" },
+  { id: "ac5", at: "2026-11-15T14:00:00.000Z", actor: "Mahi Uddin (Director)", action: "Approved minutes of", target: "Delta Pharma — Board meeting 14 Nov", tone: "success" },
+  { id: "ac6", at: "2026-11-15T09:12:00.000Z", actor: "Nusrat Jahan (Company Secretary)", action: "Reminder scheduled —", target: "AGM notice, 3 days before record date", tone: "info" },
+];
+
+export const DEMO_APPROVALS: ApprovalItem[] = [
+  { id: "ap1", title: "Notice — EGM: Bonus Share Issue (Meghna Textiles)", companyId: "co_meghna", requestedBy: "Nusrat Jahan", requestedAt: "2026-11-16T11:45:00.000Z", dueDate: "2026-11-18T00:00:00.000Z", kind: "notice" },
+  { id: "ap2", title: "Special resolution — alteration of object clause (Meghna AGM)", companyId: "co_meghna", requestedBy: "Nusrat Jahan", requestedAt: "2026-11-15T10:00:00.000Z", dueDate: "2026-11-19T00:00:00.000Z", kind: "resolution" },
+  { id: "ap3", title: "Annual report FY 2025–26 — final print proof (Delta Pharma)", companyId: "co_delta", requestedBy: "Imran Kabir", requestedAt: "2026-11-14T09:30:00.000Z", dueDate: "2026-11-20T00:00:00.000Z", kind: "document" },
+  { id: "ap4", title: "Proxy batch — 214 valid authorizations pending certification", companyId: "co_meghna", requestedBy: "Rakib Ahmed", requestedAt: "2026-11-15T16:20:00.000Z", dueDate: "2026-11-18T00:00:00.000Z", kind: "proxy_batch" },
+];
+
+export const DEMO_NOTIFICATIONS: AppNotification[] = [
+  { id: "nt1", title: "Record date in 3 days", detail: "Meghna AGM FY 2025–26 — eligibility snapshot due 20 Nov", at: "2026-11-17T03:00:00.000Z", read: false, tone: "warning" },
+  { id: "nt2", title: "Proxy certifications waiting", detail: "214 authorizations need verification before the AGM", at: "2026-11-17T02:10:00.000Z", read: false, tone: "info" },
+  { id: "nt3", title: "Notice approved", detail: "Board approved publishing the EGM notice", at: "2026-11-16T17:45:00.000Z", read: true, tone: "success" },
+];
+
+export const DEMO_AUDIT: AuditEntry[] = [
+  { id: "au1", at: "2026-11-17T02:20:11.000Z", actor: "nusrat.jahan@demo.local", action: "meeting.notice.publish", entity: "meeting:mtg_agm_2026", companyId: "co_meghna" },
+  { id: "au2", at: "2026-11-17T01:10:47.000Z", actor: "rakib.ahmed@demo.local", action: "register.import.commit", entity: "import:imp_0093", companyId: "co_meghna" },
+  { id: "au3", at: "2026-11-16T11:45:02.000Z", actor: "nusrat.jahan@demo.local", action: "approval.request", entity: "approval:ap1", companyId: "co_meghna" },
+  { id: "au4", at: "2026-11-16T08:30:19.000Z", actor: "system", action: "register.snapshot.create", entity: "snapshot:snap_0056", companyId: "co_karnaphuli" },
+  { id: "au5", at: "2026-11-15T14:00:31.000Z", actor: "mahi.uddin@demo.local", action: "minutes.approve", entity: "minutes:mtg_board_nov14", companyId: "co_delta" },
+];
+
+/** Attendance vs eligible for completed meetings — dashboard chart. */
+export const DEMO_TURNOUT: { name: string; turnout: number; eligible: number }[] = [
+  { name: "Cement EGM Oct", turnout: 17.3, eligible: 100 },
+  { name: "Meghna AGM 2025", turnout: 14.6, eligible: 100 },
+  { name: "Delta AGM 2025", turnout: 12.1, eligible: 100 },
+  { name: "Cement AGM 2024", turnout: 13.9, eligible: 100 },
+  { name: "Meghna AGM 2024", turnout: 15.8, eligible: 100 },
+  { name: "Delta AGM 2024", turnout: 11.4, eligible: 100 },
+];
+
+/* --- shareholder portal identities (demo) -------------------------------- */
+
+/**
+ * Seeded register entries for the portal. Sign-in verifies BO ID + name
+ * against this list, then asks for the (fixed) demo OTP. Nothing here is a
+ * credential; in production the OTP is one-time, sent to the registered
+ * mobile/email, and eligibility is computed from the legal register.
+ */
+export const DEMO_PARTICIPANTS: DemoParticipant[] = [
+  { id: "p_rashedul", kind: "individual", boId: "12012345678901234", name: "Rashedul Islam", subjectName: "Rashedul Islam", companyId: "co_meghna", eligibleShares: 1250, votingRights: 1250, mobile: "01••••••••52", otp: "482391" },
+  { id: "p_farhana", kind: "individual", boId: "12012345678902345", name: "Farhana Akter", subjectName: "Farhana Akter", companyId: "co_meghna", eligibleShares: 8400, votingRights: 8400, mobile: "01••••••••08", otp: "482391" },
+  { id: "p_mahirn", kind: "proxy", boId: "12012345678901234", name: "Mahir Rahman", subjectName: "Rashedul Islam", companyId: "co_meghna", eligibleShares: 1250, votingRights: 1250, mobile: "01••••••••77", otp: "482391" },
+  { id: "p_delta_corp", kind: "corporate", boId: "12012345678909999", name: "Imran Kabir", subjectName: "Delta Pharmaceuticals Limited", companyId: "co_delta", eligibleShares: 1050000, votingRights: 1050000, mobile: "01••••••••20", otp: "482391" },
+  { id: "p_chayan", kind: "individual", boId: "12012345678903333", name: "Chayan Chowdhury", subjectName: "Chayan Chowdhury", companyId: "co_karnaphuli", eligibleShares: 3300, votingRights: 3300, mobile: "01••••••••64", otp: "482391" },
+];

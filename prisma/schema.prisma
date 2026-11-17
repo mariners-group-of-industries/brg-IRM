@@ -1,0 +1,720 @@
+// BRG1 IRM — target data model (Phase 3 wiring).
+//
+// The current demo build runs on an isolated in-memory dataset. This schema is
+// the contract for the real database: normalized, tenant- and company-scoped,
+// with composite FKs so a child row can never reference another company's
+// parent. RLS policies, audit triggers and holdings immutability are enforced
+// in migration SQL (they are not expressible in the Prisma schema) — see
+// docs/DATABASE.md once Phase 3 lands. Rows carry tenant_id + company_id.
+//
+// Conventions: UUIDv7 keys, snake_case tables/columns via @@map/@map,
+// timestamptz. Nothing in this file is consumed at runtime yet.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- tenancy
+
+model Organization {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  name       String
+  slug       String    @unique
+  locale     String    @default("en-BD")
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(3)
+  tenants    Tenant[]
+
+  @@map("organizations")
+}
+
+model Tenant {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  companies      Company[]
+  users          User[]
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@map("tenants")
+}
+
+model Company {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String
+  shortName      String   @map("short_name")
+  registrationNo String   @map("registration_no")
+  tin            String
+  sector         String
+  companyType    CompanyType @map("company_type")
+  listed         Boolean  @default(false)
+  paidUpCapital  BigInt   @map("paid_up_capital")
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  memberships    Membership[]
+  shareClasses   ShareClass[]
+  shareholders   Shareholder[]
+  meetings       Meeting[]
+  documents      Document[]
+  auditLogs      AuditLog[]
+
+  @@unique([tenantId, id]) // composite FK target for company-owned rows
+  @@map("companies")
+}
+
+enum CompanyType {
+  PUBLIC_LIMITED
+  PRIVATE_LIMITED
+
+  @@map("company_type")
+}
+
+// ------------------------------------------------------------------ users
+
+model User {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email        String   @unique
+  name         String
+  phone        String?
+  status       UserStatus @default(ACTIVE)
+  passwordHash String?  @map("password_hash")
+  mfaSecret    String?  @map("mfa_secret")
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  memberships  Membership[]
+  sessions     Session[]
+  auditLogs    AuditLog[]
+
+  @@unique([tenantId, id])
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DISABLED
+
+  @@map("user_status")
+}
+
+model Session {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @map("token_hash")
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  ip         String?
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, expiresAt])
+  @@map("sessions")
+}
+
+model Membership {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String?  @map("company_id") @db.Uuid
+  company   Company? @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  roleId    String   @map("role_id") @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([userId, companyId, roleId])
+  @@index([companyId])
+  @@map("memberships")
+}
+
+model Role {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  name        String   @unique // catalogue lives in code; DB stores assignments
+  description String?
+  system      Boolean  @default(true) // system roles cannot be deleted
+  memberships Membership[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  key         String   @unique // e.g. meetings.publish
+  description String?
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id") @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String     @map("permission_id") @db.Uuid
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// --------------------------------------------------------------- registry
+
+model Investor {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  kind           InvestorKind
+  name           String
+  tin            String?
+  passportNo     String?  @map("passport_no")
+  email          String?
+  phone          String?
+  kycStatus      KycStatus  @default(PENDING) @map("kyc_status")
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  shareholderLinks ShareholderInvestor[]
+
+  @@index([tenantId, tin])
+  @@map("investors")
+}
+
+enum InvestorKind {
+  INDIVIDUAL
+  CORPORATE
+  FOREIGN
+
+  @@map("investor_kind")
+}
+
+enum KycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+
+  @@map("kyc_status")
+}
+
+model Shareholder {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  company        Company  @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Cascade)
+  boAccountId    String?  @map("bo_account_id") // CDBL beneficial-owner account
+  holderType     HolderType @map("holder_type")
+  name           String
+  tin            String?
+  nationality    String?
+  email          String?
+  phone          String?
+  address        String?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  holdings       Shareholding[]
+  registrations  MeetingRegistration[]
+  attendance     MeetingAttendance[]
+  votes          Vote[]
+  proxiesGiven   ProxyAuthorization[] @relation("proxyGrantor")
+  investorLinks  ShareholderInvestor[]
+
+  @@unique([tenantId, companyId, boAccountId])
+  @@unique([tenantId, companyId, tin])
+  @@index([tenantId, companyId, name])
+  @@map("shareholders")
+}
+
+enum HolderType {
+  INDIVIDUAL
+  CORPORATE
+  NOMINEE
+
+  @@map("holder_type")
+}
+
+model ShareholderInvestor {
+  shareholderId String @map("shareholder_id") @db.Uuid
+  shareholder   Shareholder @relation(fields: [shareholderId], references: [id], onDelete: Cascade)
+  investorId    String @map("investor_id") @db.Uuid
+  investor      Investor    @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  role          String? // e.g. ultimate_beneficial_owner
+
+  @@id([shareholderId, investorId])
+  @@map("shareholder_investors")
+}
+
+model ShareClass {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  companyId     String   @map("company_id") @db.Uuid
+  company       Company  @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Cascade)
+  name          String // Ordinary, Preference, …
+  votingWeight  Int      @default(1) @map("voting_weight")
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  holdings      Shareholding[]
+
+  @@unique([tenantId, companyId, name])
+  @@map("share_classes")
+}
+
+/// Versioned holdings: close the current row (valid_to) and insert a new one.
+/// A trigger blocks non-`valid_to` UPDATE and DELETE.
+model Shareholding {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  shareholderId  String   @map("shareholder_id") @db.Uuid
+  shareholder    Shareholder @relation(fields: [shareholderId], references: [id], onDelete: Cascade)
+  shareClassId   String   @map("share_class_id") @db.Uuid
+  shareClass     ShareClass @relation(fields: [shareClassId], references: [id], onDelete: Restrict)
+  quantity       BigInt
+  pledged        BigInt   @default(0)
+  validFrom      DateTime @default(now()) @map("valid_from") @db.Timestamptz(3)
+  validTo        DateTime? @map("valid_to") @db.Timestamptz(3) // null = current
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([tenantId, companyId, shareholderId, validTo])
+  @@map("shareholdings")
+}
+
+// --------------------------------------------------------------- meetings
+
+model Meeting {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  company        Company  @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Cascade)
+  type           MeetingType
+  title          String
+  financialYear  String   @map("financial_year")
+  startsAt       DateTime @map("starts_at") @db.Timestamptz(3)
+  timezone       String   @default("Asia/Dhaka")
+  mode           MeetingMode
+  venue          String
+  status         MeetingStatus @default(DRAFT)
+  recordDate     DateTime @map("record_date") @db.Timestamptz(3)
+  votingMethod   VotingMethod @default(SHOW_OF_HANDS) @map("voting_method")
+  pollDemandRule String   @map("poll_demand_rule") // legal rule = configuration, never a constant
+  createdById    String   @map("created_by") @db.Uuid
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  eligibility    MeetingEligibility[]
+  registrations  MeetingRegistration[]
+  attendance     MeetingAttendance[]
+  agendas        MeetingAgenda[]
+  proxies        ProxyAuthorization[]
+  ballots        Ballot[]
+  pollDemands    PollDemand[]
+  questions      MeetingQuestion[]
+  notices        MeetingNotice[]
+  minutes        MeetingMinute?
+  documents      Document[]
+
+  @@unique([tenantId, companyId, id])
+  @@index([tenantId, companyId, status, startsAt])
+  @@map("meetings")
+}
+
+enum MeetingType {
+  AGM
+  EGM
+
+  @@map("meeting_type")
+}
+
+enum MeetingMode {
+  PHYSICAL
+  VIRTUAL
+  HYBRID
+
+  @@map("meeting_mode")
+}
+
+enum MeetingStatus {
+  DRAFT
+  NOTICE_PENDING
+  NOTICE_SENT
+  SCHEDULED
+  LIVE
+  VOTING_OPEN
+  COMPLETED
+  ARCHIVED
+
+  @@map("meeting_status")
+}
+
+enum VotingMethod {
+  SHOW_OF_HANDS
+  POLL
+  HYBRID
+
+  @@map("voting_method")
+}
+
+model MeetingEligibility {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  meetingId      String   @map("meeting_id") @db.Uuid
+  meeting        Meeting  @relation(fields: [tenantId, companyId, meetingId], references: [tenantId, companyId, id], onDelete: Cascade)
+  shareholderId  String   @map("shareholder_id") @db.Uuid
+  eligibleShares BigInt   @map("eligible_shares")
+  votingRights   BigInt   @map("voting_rights")
+  snapshotAt     DateTime @default(now()) @map("snapshot_at") @db.Timestamptz(3)
+
+  @@unique([meetingId, shareholderId])
+  @@map("meeting_eligibility")
+}
+
+model MeetingAgenda {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  meetingId   String   @map("meeting_id") @db.Uuid
+  meeting     Meeting  @relation(fields: [tenantId, companyId, meetingId], references: [tenantId, companyId, id], onDelete: Cascade)
+  order       Int
+  title       String
+  kind        AgendaKind
+  status      AgendaStatus @default(PENDING)
+  resolutions Resolution[]
+
+  @@unique([meetingId, order])
+  @@map("meeting_agendas")
+}
+
+enum AgendaKind {
+  ORDINARY
+  SPECIAL
+
+  @@map("agenda_kind")
+}
+
+enum AgendaStatus {
+  PENDING
+  PROPOSED
+  SECONDED
+  PASSED
+  REJECTED
+
+  @@map("agenda_status")
+}
+
+model Resolution {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  agendaId    String   @map("agenda_id") @db.Uuid
+  agenda      MeetingAgenda @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+  reference   String   // e.g. "Resolution 5 — Special resolution"
+  text        String
+  requiredMajority String @map("required_majority") // configuration, not code
+  result      ResolutionResult?
+  ballots     Ballot[]
+
+  @@map("resolutions")
+}
+
+enum ResolutionResult {
+  PASSED
+  REJECTED
+  NOT_PUT_TO_VOTE
+
+  @@map("resolution_result")
+}
+
+model MeetingRegistration {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  meetingId      String   @map("meeting_id") @db.Uuid
+  meeting        Meeting  @relation(fields: [tenantId, companyId, meetingId], references: [tenantId, companyId, id], onDelete: Cascade)
+  shareholderId  String   @map("shareholder_id") @db.Uuid
+  shareholder    Shareholder @relation(fields: [shareholderId], references: [id], onDelete: Cascade)
+  channel        RegistrationChannel
+  registeredAt   DateTime @default(now()) @map("registered_at") @db.Timestamptz(3)
+
+  @@unique([meetingId, shareholderId])
+  @@map("meeting_registrations")
+}
+
+enum RegistrationChannel {
+  PORTAL
+  DESK
+  PROXY
+
+  @@map("registration_channel")
+}
+
+model MeetingAttendance {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  meetingId      String   @map("meeting_id") @db.Uuid
+  meeting        Meeting  @relation(fields: [tenantId, companyId, meetingId], references: [tenantId, companyId, id], onDelete: Cascade)
+  shareholderId  String   @map("shareholder_id") @db.Uuid
+  shareholder    Shareholder @relation(fields: [shareholderId], references: [id], onDelete: Cascade)
+  checkedInAt    DateTime @map("checked_in_at") @db.Timestamptz(3)
+  checkedOutAt   DateTime? @map("checked_out_at") @db.Timestamptz(3)
+  viaProxy       Boolean  @default(false) @map("via_proxy")
+
+  @@unique([meetingId, shareholderId])
+  @@map("meeting_attendance")
+}
+
+model ProxyAuthorization {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  meetingId      String   @map("meeting_id") @db.Uuid
+  meeting        Meeting  @relation(fields: [tenantId, companyId, meetingId], references: [tenantId, companyId, id], onDelete: Cascade)
+  grantorId      String   @map("grantor_id") @db.Uuid
+  grantor        Shareholder @relation("proxyGrantor", fields: [grantorId], references: [id], onDelete: Cascade)
+  proxyName      String   @map("proxy_name")
+  proxyTin       String?  @map("proxy_tin")
+  maxVotes       BigInt   @map("max_votes")
+  status         ProxyStatus @default(PENDING)
+  certifiedBy    String?  @map("certified_by") @db.Uuid
+  certifiedAt    DateTime? @map("certified_at") @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([meetingId, grantorId]) // one active proxy per holder per meeting (limit is configuration)
+  @@index([meetingId, status])
+  @@map("proxy_authorizations")
+}
+
+enum ProxyStatus {
+  PENDING
+  CERTIFIED
+  REJECTED
+  REVOKED
+
+  @@map("proxy_status")
+}
+
+// ------------------------------------------------------------------ voting
+
+model Ballot {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  companyId    String   @map("company_id") @db.Uuid
+  meetingId    String   @map("meeting_id") @db.Uuid
+  meeting      Meeting  @relation(fields: [tenantId, companyId, meetingId], references: [tenantId, companyId, id], onDelete: Cascade)
+  resolutionId String   @map("resolution_id") @db.Uuid
+  resolution   Resolution @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+  status       BallotStatus @default(OPEN)
+  openedAt     DateTime @default(now()) @map("opened_at") @db.Timestamptz(3)
+  closedAt     DateTime? @map("closed_at") @db.Timestamptz(3)
+  votes        Vote[]
+
+  @@unique([meetingId, resolutionId])
+  @@map("ballots")
+}
+
+enum BallotStatus {
+  OPEN
+  CLOSED
+  CERTIFIED
+
+  @@map("ballot_status")
+}
+
+/// Votes are append-only at the database level (trigger) and transactional at
+/// submission time. Duplicate votes are impossible via the unique constraint.
+model Vote {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  ballotId       String   @map("ballot_id") @db.Uuid
+  ballot         Ballot   @relation(fields: [ballotId], references: [id], onDelete: Cascade)
+  shareholderId  String   @map("shareholder_id") @db.Uuid
+  shareholder    Shareholder @relation(fields: [shareholderId], references: [id], onDelete: Cascade)
+  choice         VoteChoice
+  weight         BigInt   // voting_rights at snapshot time
+  reference      String   @unique // receipt reference shown to the voter
+  submittedAt    DateTime @default(now()) @map("submitted_at") @db.Timestamptz(3)
+
+  @@unique([ballotId, shareholderId]) // one vote per holder per ballot
+  @@map("votes")
+}
+
+enum VoteChoice {
+  FOR
+  AGAINST
+  ABSTAIN
+
+  @@map("vote_choice")
+}
+
+model PollDemand {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  meetingId      String   @map("meeting_id") @db.Uuid
+  meeting        Meeting  @relation(fields: [tenantId, companyId, meetingId], references: [tenantId, companyId, id], onDelete: Cascade)
+  agendaReference String  @map("agenda_reference")
+  demandedById   String   @map("demanded_by") @db.Uuid
+  demandedShares BigInt   @map("demanded_shares")
+  granted        Boolean?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@map("poll_demands")
+}
+
+model MeetingQuestion {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  meetingId      String   @map("meeting_id") @db.Uuid
+  meeting        Meeting  @relation(fields: [tenantId, companyId, meetingId], references: [tenantId, companyId, id], onDelete: Cascade)
+  shareholderId  String?  @map("shareholder_id") @db.Uuid // null = anonymous audio from desk
+  kind           QuestionKind
+  body           String?
+  status         QuestionStatus @default(PENDING)
+  answer         String?
+  moderatedById  String?  @map("moderated_by") @db.Uuid
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([meetingId, status])
+  @@map("meeting_questions")
+}
+
+enum QuestionKind {
+  TEXT
+  AUDIO
+
+  @@map("question_kind")
+}
+
+enum QuestionStatus {
+  PENDING
+  ANSWERED
+  DISMISSED
+
+  @@map("question_status")
+}
+
+// ------------------------------------------------------------- governance
+
+model MeetingMinute {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  companyId  String   @map("company_id") @db.Uuid
+  meetingId  String   @unique @map("meeting_id") @db.Uuid
+  meeting    Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  body       Json     // structured minute document
+  status     MinuteStatus @default(DRAFT)
+  approvedAt DateTime? @map("approved_at") @db.Timestamptz(3)
+  approvedBy String?  @map("approved_by") @db.Uuid
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("meeting_minutes")
+}
+
+enum MinuteStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  CERTIFIED
+
+  @@map("minute_status")
+}
+
+model MeetingNotice {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  companyId      String   @map("company_id") @db.Uuid
+  meetingId      String   @map("meeting_id") @db.Uuid
+  meeting        Meeting  @relation(fields: [tenantId, companyId, meetingId], references: [tenantId, companyId, id], onDelete: Cascade)
+  language       NoticeLanguage
+  channels       String[] // sms | email | post | newspaper | website
+  publishedAt    DateTime? @map("published_at") @db.Timestamptz(3)
+  complianceOk   Boolean  @default(false) @map("compliance_ok") // 21-day rule check
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@map("meeting_notices")
+}
+
+enum NoticeLanguage {
+  EN
+  BN
+  BOTH
+
+  @@map("notice_language")
+}
+
+model Document {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  company     Company  @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Cascade)
+  meetingId   String?  @map("meeting_id") @db.Uuid
+  meeting     Meeting? @relation(fields: [tenantId, companyId, meetingId], references: [tenantId, companyId, id], onDelete: Restrict)
+  kind        String   // notice | annual_report | financials | minutes | form
+  name        String
+  storageKey  String   @unique @map("storage_key") // object-storage pointer, never a path
+  mimeType    String   @map("mime_type") // sniffed, not client-supplied
+  sizeBytes   BigInt   @map("size_bytes")
+  visibility  DocumentVisibility @default(INTERNAL)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([tenantId, companyId, kind])
+  @@map("documents")
+}
+
+enum DocumentVisibility {
+  INTERNAL
+  BOARD
+  SHAREHOLDER_PORTAL
+  PUBLIC
+
+  @@map("document_visibility")
+}
+
+// ------------------------------------------------------------------ ops
+
+model AuditLog {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  companyId  String?  @map("company_id") @db.Uuid
+  company    Company? @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Restrict)
+  actorId    String?  @map("actor_id") @db.Uuid // null = system
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  action     String   // e.g. meetings.publish
+  entity     String   // e.g. meeting:019...
+  metadata   Json?    // never secrets, OTPs or ballot choices
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([tenantId, companyId, createdAt])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  title      String
+  detail     String?
+  tone       String   @default("info")
+  readAt     DateTime? @map("read_at") @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}

@@ -1,5 +1,0 @@
-pnpm-lock.yaml
-.next
-dist
-apps/api/src/generated
-.data

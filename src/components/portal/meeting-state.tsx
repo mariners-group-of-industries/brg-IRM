@@ -1,0 +1,13 @@
+"use client";
+import { usePortalLanguage } from "./language-provider";
+import type { MeetingPhase } from "@/lib/types";
+import type { PortalMeetingSummary } from "@/lib/portal-dashboard";
+import { portalMeetingDate, portalMeetingTime } from "@/lib/portal-format";
+import { Clock3 } from "lucide-react";
+const names: Record<MeetingPhase,string>={waiting:'Waiting',live:'Live',voting_open:'Voting open',ended:'Ended'};
+export function PortalPhaseBadge({phase}:{phase:MeetingPhase}){const{t}=usePortalLanguage();return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-medium ${phase==='waiting'?'border-info/20 bg-info-soft text-info':phase==='ended'?'border-border bg-muted text-muted-foreground':'border-brand/20 bg-brand-soft text-brand'}`}><span className="size-1.5 rounded-full bg-current" aria-hidden/>{t(names[phase])}</span>;}
+export function MeetingNextAction({summary}:{summary:PortalMeetingSummary}){
+ const{t,locale}=usePortalLanguage();const{availability,phase,meeting}=summary;
+ const message=phase==='ended'?'This meeting has ended. Review the outcomes and published documents.':availability==='ineligible'?'No eligible holding or approved representation was found for the record date.':availability==='not_open'?'Registration has not opened. Check the opening time below.':availability==='closed'?'Registration has closed. You can still read the notice and published documents.':!summary.registered?'Registration is open. Review the notice and register before the deadline.':phase==='waiting'?'You are registered. The chair has not started the meeting.':phase==='voting_open'?'Voting is open for the active agenda. Cast your ballot in the meeting room.':'The meeting is live. Join to follow the current agenda.';
+ return <div className="mt-4 rounded-lg border border-border bg-muted/25 p-3"><p className="text-xs font-semibold">{t('Your next action')}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{t(message)}</p>{summary.deadlines.length>0&&<dl className="mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-2">{summary.deadlines.map(d=><div key={d.kind} className="text-[11px] leading-5"><dt className="flex items-center gap-1 text-muted-foreground"><Clock3 className="size-3" aria-hidden/>{t(d.kind==='proxy'?'Proxy deadline':d.kind==='registration_open'?'Registration opens':'Registration closes')}</dt><dd className="font-medium">{portalMeetingDate(d.at,meeting.timezone,locale)} · {portalMeetingTime(d.at,meeting.timezone,locale)}{d.passed&&d.kind!=='registration_open'&&<span className="ml-1 text-warning">({t('Deadline passed')})</span>}</dd></div>)}</dl>}</div>;
+}

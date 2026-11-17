@@ -1,140 +1,117 @@
-# BRG1 IRM
+# BRG1 IRM — Investor Relationship Management
 
-Investor Relationship Management platform for companies in Bangladesh. The first module is **AGM/EGM Management**: digital annual and extraordinary general meetings with shareholder verification, live video, agenda control, proposals, poll demands, electronic voting, moderated questions and reporting.
+Enterprise IRM for Bangladeshi companies. First module: **AGM/EGM Management**
+(notices, eligibility, registration, voting, scrutiny, minutes). Multi-company
+from day one, with server-enforced tenancy.
 
-This repository is a modular monolith in a pnpm monorepo.
-
-| Status | |
-|---|---|
-| Phase A, foundation | **Complete.** |
-| Phase B, shareholder system | **Complete.** |
-| Phase C, meeting management | **Complete.** |
-| Phase D, live AGM experience | **Complete.** See [docs/ROADMAP.md](docs/ROADMAP.md) |
-| Phase E, secure voting | Next |
-
-## What works today
-
-- Staff sign-in with server-side sessions, CSRF protection, origin checks, rate limiting, account lockout and optional two-step verification (TOTP).
-- Tenants (corporate groups) and companies, with isolation enforced on every API query and by PostgreSQL row-level security on shareholder data.
-- Nine roles and 37 permissions from one shared catalogue, plus role assignment that blocks privilege escalation.
-- The shareholder register: BO and folio accounts, versioned holdings and masked personal data.
-- Register imports from CSV or Excel, with column mapping, row-by-row preview and confirmed commit.
-- Corporate representatives and proxies, which need approval by a second administrator. Proxies are tied to one meeting and enforce lodgement deadlines and per-proxy limits.
-- AGM and EGM management: notice, agenda and resolutions, PDF documents, governance rules, staff, a guarded state machine with a control center, and a record-date snapshot of voting entitlements.
-- Shareholders see published meetings in the portal, read the notice and documents, and register for what they hold or represent.
-- Shareholder, representative and proxy sign-in with one-time codes, plus a dedicated participant portal and meeting room.
-- Live AGM room with video adapter (Zoom SDK JWT signing + development simulator), attendance tracking, atomic proposals/seconding, configurable poll demands, written/audio question moderation, board room view, and SSE real-time updates.
-- An append-only audit log, enforced by a PostgreSQL trigger.
-
-## Repository layout
-
-```
-apps/
-  api/        NestJS 12 REST API, Prisma 7, PostgreSQL
-  web/        Next.js 16 App Router frontend
-packages/
-  shared/     Permission catalogue, roles, RBAC rules, Zod schemas, API types
-  ui/         Design tokens and accessible React primitives
-  config/     Shared TypeScript configuration
-tests/
-  e2e/        Playwright browser tests
-infrastructure/
-  dev-db/     Embedded PostgreSQL launcher for machines without Docker
-  docker-compose.yml
-docs/         Product, architecture, database, security and workflow documentation
-```
-
-## Requirements
-
-- Node.js 24 or newer
-- pnpm 12
-- PostgreSQL 16 or newer. You can use Docker Compose, a local install, or the bundled embedded server.
+> See [docs/PRODUCT_ARCHITECTURE.md](docs/PRODUCT_ARCHITECTURE.md) for the
+> route map, role matrix, design strategy and phase plan.
 
 ## Quick start
 
 ```bash
 pnpm install
-pnpm build:shared
-
-# 1. Database. Option A needs no Docker:
-pnpm db:start                      # embedded PostgreSQL 18 on 127.0.0.1:5433; keep it running
-# Option B, with Docker:
-#   docker compose -f infrastructure/docker-compose.yml up -d
-#   then set DATABASE_URL to port 5432 in apps/api/.env
-
-# 2. API configuration and schema
-cp apps/api/.env.example apps/api/.env      # then set SESSION_SECRET
-pnpm --filter @irm/api exec prisma migrate deploy
-pnpm db:seed
-
-# 3. Run the apps, each in its own terminal
-pnpm dev:api                       # http://127.0.0.1:4000/api/v1, Swagger at /api/docs
-pnpm dev:web                       # http://localhost:3100
+cp .env.example .env.local   # set IRM_SESSION_SECRET
+pnpm dev                     # http://localhost:3100
 ```
 
-Generate a session secret with:
+Demo accounts (development mode — the login screen lists them too):
 
-```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+| Email | Role | Password |
+| --- | --- | --- |
+| `admin@demo.local` | Platform Super Admin | `Demo@1234` |
+| `secretary@demo.local` | Company Secretary | `Demo@1234` |
+| `viewer@demo.local` | Restricted Viewer | `Demo@1234` |
+
+## What works today (demo build)
+
+- Authenticated app shell: collapsible sidebar, company switcher, ⌘K palette,
+  notifications, breadcrumbs, mobile drawer
+- Dashboard with portfolio KPIs, upcoming meetings, turnout chart, approvals,
+  activity feed
+- Company list + detail
+- AGM/EGM: searchable/filterable/exportable meeting list (TanStack Table),
+  8-step create-wizard (drafts, per-step validation, review & publish),
+  meeting overview
+- Approvals queue, Activity Center, Analytics, Audit Logs
+- Shareholder register: search, company/type/status filters, sorting, pagination,
+  masked CSV export, create/edit and audited personal-data reveal
+- Validated CSV register import with duplicate detection and all-or-nothing commit
+- Holder profiles, share-class holdings, append-only allotment/transfer ledger,
+  point-in-time balances and proxy/corporate representative review
+- Shareholder portal (`/portal/login`): demo identity + OTP sign-in, published
+  meetings, registration, live room, moderated text/audio questions and ballot receipts
+- Portal account: holdings, registration/receipt/question history, proxy requests
+  and withdrawal; approved demo proxies are scoped to their specific meeting
+- Shareholder dashboard (`/portal`): current holdings, next meeting and agenda,
+  registration/ballot metrics, personal activity and participation guide;
+  `/portal/meetings` provides searchable upcoming/past and registered-only views
+- Chair-controlled waiting/live/voting/ended states, with one open agenda stage
+  at a time; configured deadlines and personal next-action guidance
+- Private meeting documents: draft PDF/text upload, explicit publication,
+  portal reader and real downloads; seeded extracts are labelled fictional
+- English/Bangla portal navigation, instructions and errors, with a saved
+  language preference; original document/user content keeps its source language
+- Personal in-app notifications for registration, agenda voting, moderation,
+  document publication and meeting changes, with unread and mark-read controls
+- Investor / notices / reports / system routes are reserved and
+  render explicit "Planned — Phase N" pages (no dead links)
+
+**Demo mode**: all data is fictional and in-memory; it resets on restart.
+Meeting creation works end-to-end; nothing is persisted yet. The Prisma
+schema in [prisma/schema.prisma](prisma/schema.prisma) is the Phase 3 contract.
+
+## Scripts
+
+| Command | Purpose |
+| --- | --- |
+| `pnpm dev` / `pnpm start` | Dev server / production server on :3100 |
+| `pnpm build` | Production build |
+| `pnpm lint` | ESLint |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm test` | Vitest unit tests |
+| `pnpm exec prisma validate` | Validate the target data model |
+
+## Project layout
+
+To validate a production build while the local dev server is running, use a
+separate output directory (PowerShell):
+
+```powershell
+$env:IRM_BUILD_DIR = '.next-check'
+pnpm build
+Remove-Item Env:IRM_BUILD_DIR
 ```
 
-## Development accounts
-
-The seed creates fictitious companies and these staff accounts. They are for development only. The password is the `SEED_DEFAULT_PASSWORD` value in `apps/api/.env`.
-
-| Email | Role | Scope |
-|---|---|---|
-| platform.admin@irm.local | Platform Super Admin | Platform |
-| group.admin@mariners.example | Company Admin | Mariners Group, every company |
-| cs@marinersventures.example | Company Admin | Mariners Ventures PLC |
-| meeting.admin@marinersventures.example | Meeting Admin | Mariners Ventures PLC |
-| moderator@marinersventures.example | Moderator | Mariners Ventures PLC |
-| director@marinersventures.example | Board Member | Mariners Ventures PLC |
-| cs@padmapharma.example | Company Admin | Padma Pharmaceuticals PLC |
-
-### Try the shareholder sign-in
-
-Mariners Ventures PLC has a small fictitious register. Find its company id on the Companies page or in the URL, then open:
+The default development and production output remains `.next`.
 
 ```
-http://localhost:3100/join/<company-id>
+src/app/(auth)…(app)   routes; (app)/ = authenticated shell
+src/components/shell    sidebar, header, switcher, palette, notifications
+src/components/ui       shadcn/ui primitives
+src/lib                 session, permissions, demo store/data, format, zod
+src/proxy.ts            auth gate (formerly "middleware", Next 16 naming)
+prisma/schema.prisma    target data model (not wired yet)
+docs/                   architecture
 ```
 
-| Sign in as | Enter | Code is sent to |
-|---|---|---|
-| Shareholder | BO ID `1201950000000002` | rokeya.begum@example.com |
-| Shareholder | Folio `F-00017` | +8801811000017 |
-| Company representative | imran.hossain@deltalife.example | that email |
-| Proxy | nasima.akter@example.com | that email |
+## Honest limitations of this build
 
-No real SMS or email is sent in development. Read the code at http://localhost:3100/dev/outbox. That page and its API are disabled in production.
-
-A sample register to import is in `docs/samples/register-sample.csv`. Its last row is deliberately invalid, so you can see the error preview.
-
-## Testing
-
-```bash
-pnpm --filter @irm/shared test     # RBAC and identifier unit tests
-pnpm --filter @irm/api test        # API integration tests; rebuilds the irm_test database
-pnpm --filter @irm/web build       # production build and type check
-pnpm e2e                           # Playwright; needs the API and web servers running
-```
-
-API tests refuse to run against a database whose name does not end in `_test`. Browser tests use the development database and add a uniquely named company on each run.
-
-## Documentation
-
-| Document | Contents |
-|---|---|
-| [docs/PRD.md](docs/PRD.md) | Product requirements for the AGM/EGM module |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module boundaries, request flow, technology choices |
-| [docs/DATABASE.md](docs/DATABASE.md) | Entity model, ERD, isolation constraints |
-| [docs/ROLES_AND_PERMISSIONS.md](docs/ROLES_AND_PERMISSIONS.md) | Roles, permission matrix, assignment rules |
-| [docs/AGM_WORKFLOW.md](docs/AGM_WORKFLOW.md) | Meeting lifecycle and stage controls |
-| [docs/VOTING_RULES.md](docs/VOTING_RULES.md) | Voting engine rules and legal configuration points |
-| [docs/SECURITY.md](docs/SECURITY.md) | Security controls and threat model |
-| [docs/API.md](docs/API.md) | REST API reference |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Environments, configuration, backups |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Phases and acceptance criteria |
-| [DESIGN.md](DESIGN.md) | Design system |
-| [docs/UI_GUIDELINES.md](docs/UI_GUIDELINES.md) | Component usage rules |
+- Authentication is a labelled demo (seeded users, SHA-256 hashes, no MFA).
+  Do not deploy it as-is.
+- Cross-tenant isolation is enforced in application code; Postgres RLS and
+  composite-FK enforcement land with the Phase 3 migration.
+- Shareholder workflows use a small fictional sample register, independent of
+  the portfolio headline totals. Live CDBL synchronization, instrument uploads,
+  certificate document generation, real OTP delivery and durable storage are not connected.
+- Meeting eligibility uses configured share-class rules and freezes at first
+  registration, rather than a certified immutable record-date snapshot. Weighted
+  and class-based voting require further entitlement configuration and are disabled.
+- Proxy limits/deadlines and registration windows come from meeting configuration;
+  the wizard preserves those settings. Unpublished meetings remain private.
+- Nothing is audit-logged to durable storage yet. Register mutations, imports,
+  PII reveals and portal participation append in-memory audit metadata without
+  secrets, OTPs, question content or ballot choices.
+- Uploaded documents and notifications also reset on restart. PDF checks are
+  bounded format checks, not full malware scanning. Notifications are in-app;
+  email/SMS delivery and live video streaming are not connected.
