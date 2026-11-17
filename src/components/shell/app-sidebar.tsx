@@ -74,10 +74,10 @@ export function SidebarNav({
                       aria-current={active ? "page" : undefined}
                       title={item.label}
                       className={cn(
-                        "flex h-9 items-center gap-2.5 rounded-md px-2 text-[13px] font-medium text-sidebar-foreground transition-colors outline-none",
-                        "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring",
+                        "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium text-sidebar-foreground transition-all duration-150 outline-none",
+                        "hover:bg-sidebar-accent/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
                         active &&
-                          "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_2px_0_0_0_var(--brand)]",
+                          "bg-sidebar-accent font-semibold text-foreground shadow-[inset_3px_0_0_0_var(--brand)]",
                       )}
                     >
                       <Icon
@@ -105,14 +105,14 @@ export function SidebarNav({
 
 export function BrandMark({ collapsed }: { collapsed?: boolean }) {
   return (
-    <Link href="/dashboard" className="flex items-center gap-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-navy text-white">
-        <Landmark className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
+    <Link href="/dashboard" className="flex items-center gap-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg group">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-navy via-brand-navy to-brand text-white shadow-xs transition-transform duration-200 group-hover:scale-105">
+        <Landmark className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
       </div>
       {!collapsed && (
         <div className="leading-tight">
-          <p className="text-[13.5px] font-semibold tracking-tight text-foreground">BRG1 IRM</p>
-          <p className="text-[10px] font-medium uppercase tracking-[0.09em] text-muted-foreground">
+          <p className="text-[13.5px] font-bold tracking-tight text-foreground">BRG1 IRM</p>
+          <p className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-teal-600 dark:text-teal-400">
             Investor Relations
           </p>
         </div>

@@ -12,6 +12,7 @@ import {
 import { CompanySwitcher } from "./company-switcher";
 import { CommandPalette } from "./command-palette";
 import { NotificationsMenu } from "./notifications";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "./user-menu";
 import { BrandMark, SidebarNav } from "./app-sidebar";
 import type { AppNotification, Company, Meeting } from "@/lib/types";
@@ -115,6 +116,7 @@ export function AppHeader({
         <CompanySwitcher companies={companies} activeId={activeCompanyId} />
         <CommandPalette role={user.role} companies={companies} meetings={meetings} />
         <NotificationsMenu notifications={notifications} />
+        <ThemeToggle />
         <div className="mx-1 hidden h-5 w-px bg-border sm:block" aria-hidden />
         <UserMenu name={user.name} email={user.email} role={user.role} />
       </div>
