@@ -230,7 +230,6 @@
   backdrop-filter: blur(12px);
   background-color: color-mix(in srgb, var(--card) 85%, transparent);
 }
-}
 
 @media (prefers-reduced-motion: reduce) {
   *,
