@@ -65,6 +65,11 @@ export async function publishMeetingAction(input: unknown) {
     registrationCloses: times.registrationCloses,
     shareClassId: draft.shareClassId,
     votingEntitlement: draft.votingEntitlement,
+    streamingProvider: draft.streamingProvider,
+    streamUrl: draft.streamUrl || undefined,
+    zoomMeetingId: draft.zoomMeetingId || undefined,
+    zoomPasscode: draft.zoomPasscode || undefined,
+    hostName: draft.hostName,
     agenda: draft.agenda.map((item, index) => ({
       id: `ag_${index + 1}_${Date.now().toString(36)}`,
       order: index + 1,

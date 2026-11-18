@@ -2,7 +2,7 @@
 
 import { requirePermission } from "@/lib/require-permission";
 import { notFound } from "next/navigation";
-import { getMeeting, setMeetingSwitch, setAgendaStage, setMeetingLifecycle } from "@/lib/demo-store";
+import { getMeeting, setMeetingSwitch, setAgendaStage, setMeetingLifecycle, updateMeetingStream } from "@/lib/demo-store";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -46,5 +46,26 @@ export async function setAgendaStageAction(meetingId: string, agendaId: string, 
   const parsed = z.enum(["closed", "proposal", "seconding", "poll", "voting"]).safeParse(stage);
   if (!parsed.success || !setAgendaStage(meetingId, agendaId, parsed.data, session.email)) return { ok: false as const, error: "Start the meeting before opening an agenda stage" };
   revalidatePath(`/governance/meetings/${meetingId}`); revalidatePath("/portal", "layout");
+  return { ok: true as const };
+}
+
+const streamSchema = z.object({
+  streamingProvider: z.enum(["irm_live", "zoom", "webex", "none"]),
+  streamUrl: z.string().trim().max(500).optional(),
+  zoomMeetingId: z.string().trim().max(40).optional(),
+  zoomPasscode: z.string().trim().max(40).optional(),
+});
+
+export async function updateMeetingStreamAction(meetingId: string, input: unknown) {
+  const { session } = await chairMeeting(meetingId);
+  const parsed = streamSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid broadcast details" };
+  }
+  updateMeetingStream(meetingId, parsed.data, session.email);
+  revalidatePath(`/governance/meetings/${meetingId}`);
+  revalidatePath("/portal", "layout");
+  revalidatePath("/reports/audit");
+  revalidatePath("/activity");
   return { ok: true as const };
 }

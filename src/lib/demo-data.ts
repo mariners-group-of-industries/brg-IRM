@@ -100,6 +100,11 @@ export const DEMO_MEETINGS: Meeting[] = [
     pollDemandRule: "Shares carrying ≥ 10% of voting rights",
     votingOpen: false,
     pollDemandOpen: false,
+    streamingProvider: "zoom",
+    zoomMeetingId: "842 9104 2219",
+    zoomPasscode: "AGM2026",
+    streamUrl: "https://us06web.zoom.us/j/84291042219?pwd=AGM2026",
+    hostName: "Mahi Uddin — Chairman",
     agenda: [
       { id: "ag1", order: 1, title: "Adoption of audited financial statements for FY 2025–26", titleBn: "২০২৫–২৬ অর্থবছরের হিসাব ও নিরীক্ষা প্রতিবেদন গ্রহণ", kind: "ordinary", resolution: "Resolution 1 — Audited accounts", status: "pending" },
       { id: "ag2", order: 2, title: "Declaration of final dividend of 12%", titleBn: "১২% চূড়ান্ত লভ্যাংশ ঘোষণা", kind: "ordinary", resolution: "Resolution 2 — Final dividend", status: "pending" },
@@ -134,6 +139,11 @@ export const DEMO_MEETINGS: Meeting[] = [
     noticePublished: true,
     votingMethod: "poll",
     pollDemandRule: "Shares carrying ≥ 5% of voting rights",
+    streamingProvider: "zoom",
+    zoomMeetingId: "891 4402 1108",
+    zoomPasscode: "EGM2026",
+    streamUrl: "https://us06web.zoom.us/j/89144021108?pwd=EGM2026",
+    hostName: "Mahi Uddin — Chairman",
     agenda: [
       { id: "ag1", order: 1, title: "Issuance of bonus shares in the ratio of 1:4", kind: "special", resolution: "Resolution 1 — Bonus issue", status: "pending" },
       { id: "ag2", order: 2, title: "Capitalisation of retained earnings of ৳212.5 crore", kind: "special", resolution: "Resolution 2 — Capitalisation", status: "pending" },

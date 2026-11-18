@@ -50,6 +50,9 @@ export const meetingDraftSchema = z
 
     // Step 6 — Live meeting
     streamingProvider: z.enum(["irm_live", "zoom", "webex", "none"]),
+    streamUrl: z.string().trim().max(500).optional(),
+    zoomMeetingId: z.string().trim().max(40).optional(),
+    zoomPasscode: z.string().trim().max(40).optional(),
     hostName: z.string().trim().min(2, "Assign a host"),
     moderatorCount: z.number().int().min(0).max(20),
     autoRecord: z.boolean(),
@@ -81,7 +84,7 @@ export const STEP_FIELDS: Record<number, (keyof MeetingDraft)[]> = {
   3: ["agenda"],
   4: ["registrationOpens", "registrationCloses", "proxyDeadline", "proxyLimitPerHolder", "verificationWorkflow"],
   5: ["votingMethod", "votingStarts", "votingEnds", "voteConfirmation", "earlyVoting"],
-  6: ["streamingProvider", "hostName", "moderatorCount", "autoRecord"],
+  6: ["streamingProvider", "streamUrl", "zoomMeetingId", "zoomPasscode", "hostName", "moderatorCount", "autoRecord"],
   7: ["noticeLanguage", "deliveryChannels", "documentsToAttach", "publishToWebsite"],
 };
 

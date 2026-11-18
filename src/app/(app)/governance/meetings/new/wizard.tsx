@@ -77,7 +77,10 @@ const DEFAULT_VALUES: MeetingDraft = {
   votingEnds: "",
   voteConfirmation: true,
   earlyVoting: false,
-  streamingProvider: "irm_live",
+  streamingProvider: "zoom",
+  streamUrl: "",
+  zoomMeetingId: "",
+  zoomPasscode: "",
   hostName: "",
   moderatorCount: 2,
   autoRecord: true,
@@ -624,18 +627,42 @@ export function CreateWizard({
             {step === 6 && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <Field label="Streaming provider" htmlFor="streamingProvider" required hint="Production video requires a configured provider adapter — see System → Integrations.">
+                  <Field label="Streaming provider" htmlFor="streamingProvider" required hint="Zoom embeds inside the Shareholder Meeting Room and also offers direct Zoom App launch.">
                     <Select value={values.streamingProvider} onValueChange={(value) => value && setValue("streamingProvider", value as MeetingDraft["streamingProvider"], { shouldDirty: true })}>
                       <SelectTrigger id="streamingProvider" className="h-9 text-[13px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="irm_live">IRM Live — built-in adapter (development simulation)</SelectItem>
-                        <SelectItem value="zoom">Zoom — adapter, account not configured</SelectItem>
-                        <SelectItem value="webex">Webex — adapter, account not configured</SelectItem>
-                        <SelectItem value="none">No live streaming</SelectItem>
+                        <SelectItem value="zoom">Zoom — Embedded Web Client & Zoom App Launch</SelectItem>
+                        <SelectItem value="irm_live">IRM Live / YouTube Live Embed</SelectItem>
+                        <SelectItem value="webex">Cisco Webex — Embed / Join Link</SelectItem>
+                        <SelectItem value="none">No live streaming (voting & Q&A only)</SelectItem>
                       </SelectContent>
                     </Select>
                   </Field>
                 </div>
+                {values.streamingProvider !== "none" && (
+                  <>
+                    <div className="sm:col-span-2">
+                      <Field
+                        label={values.streamingProvider === "zoom" ? "Zoom join link" : "Live stream / embed URL"}
+                        htmlFor="streamUrl"
+                        error={err("streamUrl")}
+                        hint={values.streamingProvider === "zoom" ? "e.g. https://us06web.zoom.us/j/84291042219?pwd=..." : "Paste a YouTube Live URL, Vimeo Live, or custom embed link."}
+                      >
+                        <Input id="streamUrl" className={inputClass} placeholder={values.streamingProvider === "zoom" ? "https://us06web.zoom.us/j/..." : "https://youtube.com/live/..."} {...register("streamUrl")} />
+                      </Field>
+                    </div>
+                    {values.streamingProvider === "zoom" && (
+                      <>
+                        <Field label="Zoom Meeting / Webinar ID" htmlFor="zoomMeetingId" error={err("zoomMeetingId")}>
+                          <Input id="zoomMeetingId" className={inputClass} placeholder="842 9104 2219" {...register("zoomMeetingId")} />
+                        </Field>
+                        <Field label="Zoom Passcode" htmlFor="zoomPasscode" error={err("zoomPasscode")}>
+                          <Input id="zoomPasscode" className={inputClass} placeholder="AGM2026" {...register("zoomPasscode")} />
+                        </Field>
+                      </>
+                    )}
+                  </>
+                )}
                 <Field label="Host / chair" htmlFor="hostName" required error={err("hostName")}>
                   <Input id="hostName" className={inputClass} placeholder="Mahi Uddin — Chairman" aria-invalid={!!errors.hostName} {...register("hostName")} />
                 </Field>

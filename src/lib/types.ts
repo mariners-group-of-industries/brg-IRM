@@ -70,6 +70,11 @@ export interface Meeting {
   votingOpen?: boolean;
   pollDemandOpen?: boolean;
   activeAgendaId?: string;
+  streamingProvider?: "irm_live" | "zoom" | "webex" | "none";
+  streamUrl?: string;
+  zoomMeetingId?: string;
+  zoomPasscode?: string;
+  hostName?: string;
   agenda: AgendaItem[];
 }
 

@@ -451,6 +451,11 @@ for (const template of DEMO_MEETINGS) {
   existing.registrationCloses ??= template.registrationCloses;
   existing.shareClassId ??= template.shareClassId;
   existing.votingEntitlement ??= template.votingEntitlement;
+  existing.streamingProvider ??= template.streamingProvider;
+  existing.streamUrl ??= template.streamUrl;
+  existing.zoomMeetingId ??= template.zoomMeetingId;
+  existing.zoomPasscode ??= template.zoomPasscode;
+  existing.hostName ??= template.hostName;
 }
 
 /* --- reads ---------------------------------------------------------- */
@@ -1302,7 +1307,33 @@ export function getLiveState(meetingId: string) {
     agenda,
     votingOpen: !!meeting && meetingPhase(meeting) === "voting_open",
     pollDemandOpen: !!meeting && meeting.agenda.some((a) => a.stage === "poll") && ["live", "voting_open"].includes(meeting.status),
+    streamingProvider: meeting?.streamingProvider ?? "zoom",
+    streamUrl: meeting?.streamUrl ?? "",
+    zoomMeetingId: meeting?.zoomMeetingId ?? "",
+    zoomPasscode: meeting?.zoomPasscode ?? "",
+    hostName: meeting?.hostName ?? "",
   };
+}
+
+export function updateMeetingStream(
+  meetingId: string,
+  input: {
+    streamingProvider: "irm_live" | "zoom" | "webex" | "none";
+    streamUrl?: string;
+    zoomMeetingId?: string;
+    zoomPasscode?: string;
+  },
+  actor: string,
+) {
+  const meeting = getMeeting(meetingId);
+  if (!meeting) return false;
+  meeting.streamingProvider = input.streamingProvider;
+  meeting.streamUrl = input.streamUrl?.trim() || undefined;
+  meeting.zoomMeetingId = input.zoomMeetingId?.trim() || undefined;
+  meeting.zoomPasscode = input.zoomPasscode?.trim() || undefined;
+  auditRegistry(registry, actor, "meeting.stream.update", `meeting:${meetingId}`, meeting.companyId);
+  pushActivity(actor, `Updated live broadcast settings (${input.streamingProvider}) for`, meeting.title, "info");
+  return true;
 }
 
 export function setMeetingSwitch(meetingId: string, key: "votingOpen" | "pollDemandOpen", value: boolean, actor = "Demo operator") {

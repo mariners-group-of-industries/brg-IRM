@@ -43,6 +43,11 @@ export default async function PortalRoomPage({
         pollDemandOpen: meeting.pollDemandOpen ?? false,
         eligibleShareholders: meeting.eligibleShareholders,
         registered: meeting.registered,
+        streamingProvider: meeting.streamingProvider ?? "zoom",
+        streamUrl: meeting.streamUrl ?? "",
+        zoomMeetingId: meeting.zoomMeetingId ?? "",
+        zoomPasscode: meeting.zoomPasscode ?? "",
+        hostName: meeting.hostName ?? "",
         agenda: meeting.agenda,
       }}
       participant={{
