@@ -1,5 +1,6 @@
 "use client";
 import { usePortalLanguage } from "@/components/portal/language-provider";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { Building2, ChevronRight, Fingerprint, Loader2, ShieldCheck, User, UserCheck, } from "lucide-react";
@@ -181,5 +182,12 @@ export function PortalLoginForm({ nextTarget }: {
               {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden/> : null}{t("Enter the portal")}</Button>
           </div>
         </form>)}
+
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        {t("Company secretary or administrator?")}{" "}
+        <Link href="/admin" className="font-semibold text-brand hover:underline">
+          {t("Sign in to Admin Workspace (/admin) →")}
+        </Link>
+      </p>
     </div>);
 }

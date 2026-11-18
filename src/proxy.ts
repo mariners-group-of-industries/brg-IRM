@@ -25,6 +25,27 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Root route: default to Shareholder surface
+  if (pathname === "/") {
+    const portalSigned = await valid(request.cookies.get(PORTAL_COOKIE)?.value, "irm-portal");
+    if (portalSigned) {
+      return NextResponse.redirect(new URL("/portal", request.url));
+    }
+    const staffSigned = await valid(request.cookies.get(STAFF_COOKIE)?.value, "irm-staff");
+    if (staffSigned) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return NextResponse.redirect(new URL("/portal/login", request.url));
+  }
+
+  // Admin access point: /admin or /admin/...
+  if (pathname === "/admin" || pathname === "/admin/" || pathname.startsWith("/admin/")) {
+    const staffSigned = await valid(request.cookies.get(STAFF_COOKIE)?.value, "irm-staff");
+    return staffSigned
+      ? NextResponse.redirect(new URL("/dashboard", request.url))
+      : NextResponse.redirect(new URL("/login?next=/dashboard", request.url));
+  }
+
   // Shareholder portal — separate surface, separate cookie.
   if (pathname === "/portal/login" || pathname.startsWith("/portal/login/")) {
     // The page also checks current register status; an otherwise valid cookie
