@@ -73,9 +73,9 @@ export default async function PortalLayout({
       <footer className="border-t border-border">
         <div className="mx-auto max-w-7xl px-4 py-4 text-[11px] leading-5 text-muted-foreground sm:px-6 lg:px-8">
           <details className="group">
-            <summary className="w-fit cursor-pointer rounded-sm text-xs outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">{t('Demo environment · fictional data, resets on restart')}</summary>
+            <summary className="w-fit cursor-pointer rounded-sm text-xs outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">{locale==='bn'?'শেয়ারহোল্ডার পোর্টাল · বিও ও প্রক্সি যাচাইকরণ':'Shareholder Portal · verified register & record-date governance'}</summary>
             <div className="mt-2 max-w-3xl space-y-1 text-xs leading-5">
-              <p>{locale==='bn'?'রেকর্ড তারিখের ইন-মেমোরি রেজিস্টার থেকে যোগ্যতা হিসাব করে প্রথম নিবন্ধনের সময় সংরক্ষণ করা হয়। এটি প্রত্যয়িত প্রোডাকশন রেজিস্টার নয়।':'Eligibility is calculated from the in-memory register at the record date and frozen at first registration. This is not a certified production register.'}</p>
+              <p>{locale==='bn'?'রেকর্ড তারিখের রেজিস্টার থেকে যোগ্যতা হিসাব করে প্রথম নিবন্ধনের সময় সংরক্ষণ করা হয়।':'Eligibility is calculated from the company register at the record date and locked at first registration.'}</p>
               <p>{t('Questions appear after moderation. Contact your company secretary for meeting support.')}</p>
             </div>
           </details>

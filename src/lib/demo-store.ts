@@ -18,19 +18,28 @@ import {
 } from "./demo-data";
 import type {
   ActivityItem,
+  ApprovalItem,
   Company,
+  CompanySettings,
+  CommunicationBroadcast,
+  DemoParticipant,
+  IntegrationAdapter,
+  InvestorRecord,
   Meeting,
   MeetingQuestionRecord,
+  NoticeDispatchRecord,
   ParticipantKind,
   PortalDemand,
   PortalVote,
   PortalNotification,
   MeetingDocument,
   AgendaStage,
+  SupportTicket,
 } from "./types";
 import { AGENDA_STAGES, agendaOpen, meetingPhase } from "./meeting-rules";
 import { auditRegistry, registry } from "./shareholder-store";
 import { holdingBalance } from "./shareholders";
+import { grantCompanyToAdmins } from "./demo-users";
 
 interface AudioBlob {
   buffer: Buffer;
@@ -66,6 +75,303 @@ const SEED_QUESTIONS: MeetingQuestionRecord[] = [
   { id: "q_seed_3", meetingId: "mtg_agm_2026", participantId: "p_farhana", participantName: "Farhana Akter", boId: "…2345", kind: "text", body: "Please confirm the record date snapshot methodology.", status: "pending", at: "2026-11-17T03:05:00.000Z" },
 ];
 
+const SEED_COMPANY_SETTINGS: CompanySettings[] = [
+  {
+    companyId: "co_meghna",
+    quorumPercent: 25,
+    quorumMinMembers: 5,
+    pollDemandThresholdPercent: 10,
+    defaultProxyLimit: 1,
+    proxyDeadlineHoursBefore: 48,
+    noticeDaysRequired: 21,
+    signatoryName: "Nusrat Jahan, FCS",
+    signatoryTitle: "Company Secretary",
+    sealReference: "MTL-SEAL-2026-01",
+    updatedAt: "2026-11-10T09:00:00.000Z",
+  },
+  {
+    companyId: "co_delta",
+    quorumPercent: 25,
+    quorumMinMembers: 5,
+    pollDemandThresholdPercent: 10,
+    defaultProxyLimit: 1,
+    proxyDeadlineHoursBefore: 48,
+    noticeDaysRequired: 21,
+    signatoryName: "Kamrul Hasan, ACS",
+    signatoryTitle: "Company Secretary",
+    sealReference: "DPL-SEAL-2026-04",
+    updatedAt: "2026-11-08T10:30:00.000Z",
+  },
+  {
+    companyId: "co_karnaphuli",
+    quorumPercent: 20,
+    quorumMinMembers: 5,
+    pollDemandThresholdPercent: 10,
+    defaultProxyLimit: 1,
+    proxyDeadlineHoursBefore: 48,
+    noticeDaysRequired: 21,
+    signatoryName: "Tariqul Islam",
+    signatoryTitle: "Company Secretary",
+    sealReference: "KCCL-SEAL-2026-02",
+    updatedAt: "2026-10-25T11:00:00.000Z",
+  },
+  {
+    companyId: "co_padma",
+    quorumPercent: 30,
+    quorumMinMembers: 2,
+    pollDemandThresholdPercent: 10,
+    defaultProxyLimit: 2,
+    proxyDeadlineHoursBefore: 24,
+    noticeDaysRequired: 14,
+    signatoryName: "Farid Uddin Ahmed",
+    signatoryTitle: "Managing Director & Secretary",
+    sealReference: "PAIL-SEAL-2026-01",
+    updatedAt: "2026-10-18T14:15:00.000Z",
+  },
+];
+
+const SEED_INVESTORS: InvestorRecord[] = [
+  {
+    id: "inv_1",
+    companyId: "co_meghna",
+    kind: "individual",
+    name: "Rashedul Islam",
+    tin: "100456789012",
+    email: "rashedul.islam@dhaka-invest.bd",
+    phone: "+8801711000152",
+    country: "Bangladesh",
+    kycStatus: "verified",
+    relationshipManager: "Nusrat Jahan",
+    communicationPreference: "both",
+    linkedBoIds: ["12012345678901234"],
+    notes: "Long-term ordinary shareholder; regular AGM attendee.",
+    updatedAt: "2026-11-12T08:30:00.000Z",
+  },
+  {
+    id: "inv_2",
+    companyId: "co_meghna",
+    kind: "corporate",
+    name: "Eastern Investments Limited",
+    tin: "100998877661",
+    email: "custody@easterninvest.com.bd",
+    phone: "+8801710000003",
+    country: "Bangladesh",
+    kycStatus: "verified",
+    relationshipManager: "Aditi Rahman",
+    communicationPreference: "email",
+    linkedBoIds: ["12012345678910003"],
+    notes: "Institutional asset manager holding ordinary equity block.",
+    updatedAt: "2026-11-14T10:15:00.000Z",
+  },
+  {
+    id: "inv_3",
+    companyId: "co_delta",
+    kind: "corporate",
+    name: "Delta Holdings & Pension Trust",
+    tin: "100554433221",
+    email: "trustee@deltaholdings.com.bd",
+    phone: "+8801711000920",
+    country: "Bangladesh",
+    kycStatus: "verified",
+    relationshipManager: "Aditi Rahman",
+    communicationPreference: "email",
+    linkedBoIds: ["12012345678909999"],
+    notes: "Board-authorized institutional representative Imran Kabir on file.",
+    updatedAt: "2026-11-05T11:20:00.000Z",
+  },
+  {
+    id: "inv_4",
+    companyId: "co_karnaphuli",
+    kind: "foreign",
+    name: "Bay Maritime Capital Partners",
+    tin: "N/A (FII-SG-884)",
+    email: "ir-desk@baymaritime.sg",
+    phone: "+6568124400",
+    country: "Singapore",
+    kycStatus: "pending",
+    relationshipManager: "Rakib Ahmed",
+    communicationPreference: "email",
+    linkedBoIds: ["12012345678903333"],
+    notes: "Updated custodian board resolution requested prior to FY26 dividend.",
+    updatedAt: "2026-11-15T06:45:00.000Z",
+  },
+];
+
+const SEED_NOTICE_DISPATCHES: NoticeDispatchRecord[] = [
+  {
+    id: "nd_1",
+    meetingId: "mtg_agm_2026",
+    companyId: "co_meghna",
+    channel: "portal",
+    language: "bilingual",
+    recipientCount: 12480,
+    dispatchedBy: "secretary@demo.local",
+    dispatchedAt: "2026-11-17T02:20:00.000Z",
+    status: "published",
+    reference: "NTC-MTL-2026-001",
+  },
+  {
+    id: "nd_2",
+    meetingId: "mtg_agm_2026",
+    companyId: "co_meghna",
+    channel: "newspaper",
+    language: "bilingual",
+    recipientCount: 2,
+    dispatchedBy: "secretary@demo.local",
+    dispatchedAt: "2026-11-17T04:00:00.000Z",
+    status: "delivered",
+    reference: "NP-FE-PA-2026-11",
+  },
+  {
+    id: "nd_3",
+    meetingId: "mtg_egm_bonus",
+    companyId: "co_meghna",
+    channel: "email",
+    language: "en",
+    recipientCount: 12480,
+    dispatchedBy: "secretary@demo.local",
+    dispatchedAt: "2026-11-05T08:15:00.000Z",
+    status: "delivered",
+    reference: "EML-MTL-EGM-2026",
+  },
+];
+
+const SEED_COMMUNICATIONS: CommunicationBroadcast[] = [
+  {
+    id: "comm_1",
+    companyId: "co_meghna",
+    meetingId: "mtg_agm_2026",
+    category: "notice",
+    subject: "23rd AGM Statutory Notice & Proxy Submission Guidelines",
+    body: "Shareholders holding shares as of the record date (20 Nov 2026) are invited to register and review the audited FY 2025–26 accounts via the Shareholder Portal.",
+    channels: ["portal", "email"],
+    recipientCount: 12480,
+    sentBy: "secretary@demo.local",
+    sentAt: "2026-11-17T02:25:00.000Z",
+    status: "delivered",
+  },
+  {
+    id: "comm_2",
+    companyId: "co_karnaphuli",
+    meetingId: "mtg_egm_cement",
+    category: "results",
+    subject: "Certified EGM Poll Results — Rights Share Offer",
+    body: "Both Special Resolutions for the Rights Issue and Authorized Capital increase passed with 96.4% shareholder approval. Minutes are available for download.",
+    channels: ["portal", "email", "sms"],
+    recipientCount: 8120,
+    sentBy: "admin@demo.local",
+    sentAt: "2026-10-30T13:10:00.000Z",
+    status: "delivered",
+  },
+];
+
+const SEED_SUPPORT_TICKETS: SupportTicket[] = [
+  {
+    id: "tkt_1",
+    ticketNo: "IRM-2026-104",
+    companyId: "co_meghna",
+    boId: "12012345678902345",
+    shareholderName: "Farhana Akter",
+    category: "meeting_access",
+    subject: "Confirming mobile number for 23rd AGM OTP delivery",
+    description: "Shareholder requested verification that the updated 017••••08 contact on the CDBL snapshot will receive the portal OTP.",
+    priority: "medium",
+    status: "in_progress",
+    assignedTo: "Nusrat Jahan",
+    createdAt: "2026-11-16T09:15:00.000Z",
+    updatedAt: "2026-11-17T04:10:00.000Z",
+  },
+  {
+    id: "tkt_2",
+    ticketNo: "IRM-2026-105",
+    companyId: "co_meghna",
+    boId: "12012345678901234",
+    shareholderName: "Rashedul Islam",
+    category: "proxy_instrument",
+    subject: "Verification status of proxy instrument DEMO-PROXY-001",
+    description: "Shareholder inquired whether Mahir Rahman's proxy form has been cleared for the 23rd AGM.",
+    priority: "low",
+    status: "resolved",
+    assignedTo: "Rakib Ahmed",
+    resolutionNote: "Verified signature against specimen record; approved in register authorizations.",
+    createdAt: "2026-11-14T11:00:00.000Z",
+    updatedAt: "2026-11-15T15:30:00.000Z",
+  },
+  {
+    id: "tkt_3",
+    ticketNo: "IRM-2026-106",
+    companyId: "co_delta",
+    boId: "12012345678910001",
+    shareholderName: "Tanvir Ahmed",
+    category: "dividend_claim",
+    subject: "Unclaimed FY 2024–25 cash dividend BEFTN re-routing",
+    description: "Shareholder updated bank routing number with depository participant and requested re-dispatch of dividend warrant.",
+    priority: "high",
+    status: "open",
+    assignedTo: "Aditi Rahman",
+    createdAt: "2026-11-17T05:20:00.000Z",
+    updatedAt: "2026-11-17T05:20:00.000Z",
+  },
+];
+
+const SEED_INTEGRATIONS: IntegrationAdapter[] = [
+  {
+    id: "int_cdbl",
+    key: "cdbl",
+    name: "CDBL Beneficial Owner Sync",
+    provider: "Central Depository Bangladesh Ltd (CDBL)",
+    category: "Share Register",
+    status: "connected",
+    endpoint: "https://cds-api.cdbl.com.bd/v2/snapshots",
+    lastSyncAt: "2026-11-17T01:10:00.000Z",
+    lastSyncSummary: "Synchronized 12,480 BO records across Meghna Textiles & Delta Pharma.",
+  },
+  {
+    id: "int_sms",
+    key: "sms_gateway",
+    name: "SMS OTP & Notice Gateway",
+    provider: "SSL Wireless (Bangladesh)",
+    category: "Messaging",
+    status: "connected",
+    endpoint: "https://smsplus.sslwireless.com/api/v3/send-sms",
+    lastSyncAt: "2026-11-17T02:20:00.000Z",
+    lastSyncSummary: "Gateway healthy · 99.4% delivery rate in last 24h.",
+  },
+  {
+    id: "int_email",
+    key: "email_smtp",
+    name: "Transactional Email Relay",
+    provider: "Resend / Enterprise SMTP",
+    category: "Messaging",
+    status: "connected",
+    endpoint: "smtp://relay.brg1-irm.internal:587",
+    lastSyncAt: "2026-11-17T02:25:00.000Z",
+    lastSyncSummary: "DKIM & SPF verified · Notice batch queue clear.",
+  },
+  {
+    id: "int_video",
+    key: "video_bridge",
+    name: "Live AGM Video Bridge",
+    provider: "Zoom Enterprise Webinar SDK",
+    category: "Meeting Room",
+    status: "sandbox",
+    endpoint: "https://api.zoom.us/v2/webinars",
+    lastSyncAt: "2026-11-16T16:00:00.000Z",
+    lastSyncSummary: "Test bridge verified for 23rd AGM Hybrid Hall stream.",
+  },
+  {
+    id: "int_rjsc",
+    key: "rjsc_filing",
+    name: "RJSC & BSEC Filing Packager",
+    provider: "RJSC / DSE Electronic Exporter",
+    category: "Regulatory",
+    status: "connected",
+    endpoint: "https://filing.brg1-irm.internal/bsec-xbrl",
+    lastSyncAt: "2026-10-30T13:30:00.000Z",
+    lastSyncSummary: "Last Form-XV & voting summary package exported for Karnaphuli EGM.",
+  },
+];
+
 interface PortalState {
   registrations: { meetingId: string; participantId: string; at: string; shares?: number; votingRights?: number }[];
   attendance: { meetingId: string; participantId: string; at: string }[];
@@ -81,6 +387,13 @@ interface DemoStore {
   companies: Company[];
   meetings: Meeting[];
   activity: ActivityItem[];
+  approvals: ApprovalItem[];
+  companySettings: CompanySettings[];
+  investors: InvestorRecord[];
+  noticeDispatches: NoticeDispatchRecord[];
+  communications: CommunicationBroadcast[];
+  supportTickets: SupportTicket[];
+  integrations: IntegrationAdapter[];
   portal: PortalState;
   portalNotifications: PortalNotification[];
   documents: MeetingDocument[];
@@ -93,6 +406,13 @@ function seed(): DemoStore {
     companies: structuredClone(DEMO_COMPANIES),
     meetings: structuredClone(DEMO_MEETINGS),
     activity: structuredClone(DEMO_ACTIVITY),
+    approvals: DEMO_APPROVALS.map((a) => ({ ...a, status: "pending" as const })),
+    companySettings: structuredClone(SEED_COMPANY_SETTINGS),
+    investors: structuredClone(SEED_INVESTORS),
+    noticeDispatches: structuredClone(SEED_NOTICE_DISPATCHES),
+    communications: structuredClone(SEED_COMMUNICATIONS),
+    supportTickets: structuredClone(SEED_SUPPORT_TICKETS),
+    integrations: structuredClone(SEED_INTEGRATIONS),
     portalNotifications: [],
     documents: [],
     portal: {
@@ -113,6 +433,13 @@ export const demoStore: DemoStore = (globalStore.__irmDemo ??= seed());
 demoStore.portal.attendance ??= [];
 demoStore.portalNotifications ??= [];
 demoStore.documents ??= [];
+demoStore.approvals ??= DEMO_APPROVALS.map((a) => ({ ...a, status: "pending" as const }));
+demoStore.companySettings ??= structuredClone(SEED_COMPANY_SETTINGS);
+demoStore.investors ??= structuredClone(SEED_INVESTORS);
+demoStore.noticeDispatches ??= structuredClone(SEED_NOTICE_DISPATCHES);
+demoStore.communications ??= structuredClone(SEED_COMMUNICATIONS);
+demoStore.supportTickets ??= structuredClone(SEED_SUPPORT_TICKETS);
+demoStore.integrations ??= structuredClone(SEED_INTEGRATIONS);
 for (const template of DEMO_MEETINGS) {
   const existing = demoStore.meetings.find((m) => m.id === template.id);
   if (!existing) continue;
@@ -155,8 +482,8 @@ export function listActivity(): ActivityItem[] {
   );
 }
 
-export function listApprovals() {
-  return DEMO_APPROVALS;
+export function listApprovals(): ApprovalItem[] {
+  return demoStore.approvals;
 }
 
 export function listAudit() {
@@ -171,7 +498,351 @@ export function turnoverSeries() {
   return DEMO_TURNOUT;
 }
 
-/* --- writes ---------------------------------------------------------- */
+/* --- writes & module workflows --------------------------------------- */
+
+export function createCompany(
+  input: Omit<Company, "id">,
+  actor: string,
+): Company {
+  if (demoStore.companies.some((c) => c.registrationNo.toLowerCase() === input.registrationNo.trim().toLowerCase())) {
+    throw new Error("A company with this registration number already exists");
+  }
+  const slug = input.shortName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 20);
+  const company: Company = {
+    ...input,
+    id: `co_${slug || "entity"}_${Date.now().toString(36).slice(-4)}`,
+  };
+  demoStore.companies.push(company);
+  demoStore.companySettings.push({
+    companyId: company.id,
+    quorumPercent: 25,
+    quorumMinMembers: company.type === "Private Limited" ? 2 : 5,
+    pollDemandThresholdPercent: 10,
+    defaultProxyLimit: 1,
+    proxyDeadlineHoursBefore: 48,
+    noticeDaysRequired: company.type === "Private Limited" ? 14 : 21,
+    signatoryName: actor,
+    signatoryTitle: "Company Secretary",
+    sealReference: `${company.shortName.slice(0, 4).toUpperCase()}-SEAL-${new Date().getFullYear()}`,
+    updatedAt: new Date().toISOString(),
+  });
+  grantCompanyToAdmins(company.id);
+  auditRegistry(registry, actor, "company.create", `company:${company.id}`, company.id);
+  pushActivity(actor, "Onboarded entity", company.name, "success");
+  return company;
+}
+
+export function decideApproval(
+  id: string,
+  decision: "approved" | "rejected",
+  actor: string,
+  note?: string,
+) {
+  const item = demoStore.approvals.find((a) => a.id === id);
+  if (!item) return null;
+  item.status = decision;
+  item.decidedBy = actor;
+  item.decidedAt = new Date().toISOString();
+  item.note = note?.trim() || undefined;
+  auditRegistry(registry, actor, `approval.${decision}`, `approval:${item.id}`, item.companyId);
+  pushActivity(actor, `${decision === "approved" ? "Approved" : "Rejected"}`, item.title, decision === "approved" ? "success" : "warning");
+  return item;
+}
+
+export function getCompanySettings(companyId: string): CompanySettings {
+  let settings = demoStore.companySettings.find((s) => s.companyId === companyId);
+  if (!settings) {
+    settings = {
+      companyId,
+      quorumPercent: 25,
+      quorumMinMembers: 5,
+      pollDemandThresholdPercent: 10,
+      defaultProxyLimit: 1,
+      proxyDeadlineHoursBefore: 48,
+      noticeDaysRequired: 21,
+      signatoryName: "Company Secretary",
+      signatoryTitle: "Company Secretary",
+      sealReference: "BRG1-SEAL",
+      updatedAt: new Date().toISOString(),
+    };
+    demoStore.companySettings.push(settings);
+  }
+  return settings;
+}
+
+export function saveCompanySettings(
+  companyId: string,
+  patch: Omit<CompanySettings, "companyId" | "updatedAt">,
+  actor: string,
+  applyToUpcomingMeetings = false,
+): CompanySettings {
+  const existing = getCompanySettings(companyId);
+  Object.assign(existing, patch, { updatedAt: new Date().toISOString() });
+  if (applyToUpcomingMeetings) {
+    for (const m of demoStore.meetings) {
+      if (m.companyId === companyId && !["completed", "archived"].includes(m.status)) {
+        m.proxyLimitPerHolder = patch.defaultProxyLimit;
+        m.pollDemandRule = `Shares carrying ≥ ${patch.pollDemandThresholdPercent}% of voting rights`;
+      }
+    }
+  }
+  auditRegistry(registry, actor, "settings.update", `company:${companyId}`, companyId);
+  pushActivity(actor, "Updated governance & legal rules for", getCompany(companyId)?.shortName ?? companyId, "info");
+  return existing;
+}
+
+export function listInvestors(companyId?: string): InvestorRecord[] {
+  return (companyId ? demoStore.investors.filter((i) => i.companyId === companyId) : demoStore.investors)
+    .slice()
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export function saveInvestor(
+  input: Omit<InvestorRecord, "id" | "updatedAt">,
+  actor: string,
+  id?: string,
+): InvestorRecord {
+  const now = new Date().toISOString();
+  if (id) {
+    const existing = demoStore.investors.find((i) => i.id === id);
+    if (!existing) throw new Error("Investor record not found");
+    Object.assign(existing, input, { updatedAt: now });
+    auditRegistry(registry, actor, "investor.update", `investor:${id}`, existing.companyId);
+    pushActivity(actor, "Updated investor KYC profile", existing.name, "info");
+    return existing;
+  }
+  const investor: InvestorRecord = {
+    ...input,
+    id: `inv_${crypto.randomUUID().slice(0, 8)}`,
+    updatedAt: now,
+  };
+  demoStore.investors.unshift(investor);
+  auditRegistry(registry, actor, "investor.create", `investor:${investor.id}`, investor.companyId);
+  pushActivity(actor, "Created investor profile", investor.name, "success");
+  return investor;
+}
+
+export function updateInvestorKyc(
+  id: string,
+  kycStatus: InvestorRecord["kycStatus"],
+  actor: string,
+): InvestorRecord | null {
+  const investor = demoStore.investors.find((i) => i.id === id);
+  if (!investor) return null;
+  investor.kycStatus = kycStatus;
+  investor.updatedAt = new Date().toISOString();
+  auditRegistry(registry, actor, `investor.kyc.${kycStatus}`, `investor:${id}`, investor.companyId);
+  pushActivity(actor, `Marked investor KYC as ${kycStatus}`, investor.name, kycStatus === "verified" ? "success" : "warning");
+  return investor;
+}
+
+export function listNoticeDispatches(companyId?: string, meetingId?: string): NoticeDispatchRecord[] {
+  return demoStore.noticeDispatches
+    .filter((d) => (!companyId || d.companyId === companyId) && (!meetingId || d.meetingId === meetingId))
+    .slice()
+    .sort((a, b) => b.dispatchedAt.localeCompare(a.dispatchedAt));
+}
+
+export function dispatchStatutoryNotice(
+  input: {
+    meetingId: string;
+    channels: ("portal" | "email" | "sms" | "newspaper")[];
+    language: "en" | "bn" | "bilingual";
+    noticeText?: string;
+  },
+  actor: string,
+): NoticeDispatchRecord[] {
+  const meeting = getMeeting(input.meetingId);
+  if (!meeting) throw new Error("Meeting not found");
+  const company = getCompany(meeting.companyId);
+  const now = new Date().toISOString();
+
+  // Publish meeting & generate portal notice document if not published yet
+  if (!meeting.noticePublished) {
+    meeting.noticePublished = true;
+    meeting.noticePublishedAt = now;
+  }
+  if (["draft", "notice_pending"].includes(meeting.status)) {
+    meeting.status = "notice_sent";
+  }
+
+  const existingDoc = demoStore.documents.find((d) => d.meetingId === meeting.id && d.kind === "notice");
+  const textContent =
+    input.noticeText?.trim() ||
+    `${company?.name ?? ""}\nSTATUTORY NOTICE — ${meeting.title} (${meeting.financialYear})\nDate: ${meeting.date} (${meeting.timezone})\nRecord Date: ${meeting.recordDate.slice(0, 10)}\nVenue: ${meeting.venue}\n\nAGENDA:\n${meeting.agenda.map((a) => `${a.order}. ${a.title}${a.titleBn ? ` / ${a.titleBn}` : ""}`).join("\n")}`;
+
+  if (existingDoc) {
+    existingDoc.published = true;
+    existingDoc.publishedAt = now;
+    existingDoc.text = textContent;
+    existingDoc.content = new TextEncoder().encode(textContent);
+  } else {
+    demoStore.documents.push({
+      id: `doc_notice_${meeting.id}_${Date.now().toString(36)}`,
+      companyId: meeting.companyId,
+      meetingId: meeting.id,
+      title: `Statutory Notice — ${meeting.title}`,
+      kind: "notice",
+      fileName: `notice-${meeting.id}.txt`,
+      mimeType: "text/plain",
+      content: new TextEncoder().encode(textContent),
+      text: textContent,
+      published: true,
+      createdAt: now,
+      publishedAt: now,
+    });
+  }
+
+  const created: NoticeDispatchRecord[] = input.channels.map((channel) => {
+    const rec: NoticeDispatchRecord = {
+      id: `nd_${crypto.randomUUID().slice(0, 8)}`,
+      meetingId: meeting.id,
+      companyId: meeting.companyId,
+      channel,
+      language: input.language,
+      recipientCount: channel === "newspaper" ? 2 : meeting.eligibleShareholders,
+      dispatchedBy: actor,
+      dispatchedAt: now,
+      status: channel === "portal" ? "published" : "delivered",
+      reference: `NTC-${channel.toUpperCase()}-${Date.now().toString(36).toUpperCase().slice(-5)}`,
+    };
+    demoStore.noticeDispatches.unshift(rec);
+    return rec;
+  });
+
+  if (input.channels.includes("portal")) {
+    notifyMeeting(meeting.id, "notice", "Statutory Meeting Notice Published", `${meeting.title} — Notice and agenda are now live.`);
+  }
+  auditRegistry(registry, actor, "meeting.notice.dispatch", `meeting:${meeting.id}`, meeting.companyId);
+  pushActivity(actor, `Dispatched statutory notice (${input.channels.join(", ")}) for`, meeting.title, "success");
+  return created;
+}
+
+export function listCommunications(companyId?: string): CommunicationBroadcast[] {
+  return (companyId ? demoStore.communications.filter((c) => c.companyId === companyId) : demoStore.communications)
+    .slice()
+    .sort((a, b) => b.sentAt.localeCompare(a.sentAt));
+}
+
+export function sendCommunicationBroadcast(
+  input: {
+    companyId: string;
+    meetingId?: string;
+    category: CommunicationBroadcast["category"];
+    subject: string;
+    body: string;
+    channels: ("portal" | "email" | "sms")[];
+  },
+  actor: string,
+): CommunicationBroadcast {
+  const company = getCompany(input.companyId);
+  if (!company) throw new Error("Company not found");
+  const now = new Date().toISOString();
+  const broadcast: CommunicationBroadcast = {
+    id: `comm_${crypto.randomUUID().slice(0, 8)}`,
+    companyId: input.companyId,
+    meetingId: input.meetingId || undefined,
+    category: input.category,
+    subject: input.subject.trim(),
+    body: input.body.trim(),
+    channels: input.channels,
+    recipientCount: company.totalShareholders,
+    sentBy: actor,
+    sentAt: now,
+    status: "delivered",
+  };
+  demoStore.communications.unshift(broadcast);
+
+  if (input.channels.includes("portal")) {
+    const targetMeeting =
+      (input.meetingId ? getMeeting(input.meetingId) : undefined) ??
+      listMeetings(input.companyId).find(isPublishedMeeting);
+    if (targetMeeting && isPublishedMeeting(targetMeeting)) {
+      for (const pid of listCompanyParticipantIds(input.companyId)) {
+        notifyParticipant(pid, targetMeeting.id, "notice", broadcast.subject, broadcast.body);
+      }
+    }
+  }
+  auditRegistry(registry, actor, "communication.send", `communication:${broadcast.id}`, input.companyId);
+  pushActivity(actor, `Sent ${input.category} broadcast (${input.channels.join("/")}) to`, company.shortName, "info");
+  return broadcast;
+}
+
+export function listSupportTickets(companyId?: string): SupportTicket[] {
+  return (companyId ? demoStore.supportTickets.filter((t) => t.companyId === companyId) : demoStore.supportTickets)
+    .slice()
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export function createSupportTicket(
+  input: Omit<SupportTicket, "id" | "ticketNo" | "status" | "createdAt" | "updatedAt">,
+  actor: string,
+): SupportTicket {
+  const now = new Date().toISOString();
+  const seq = 104 + demoStore.supportTickets.length;
+  const ticket: SupportTicket = {
+    ...input,
+    id: `tkt_${crypto.randomUUID().slice(0, 8)}`,
+    ticketNo: `IRM-${new Date().getFullYear()}-${seq}`,
+    status: "open",
+    createdAt: now,
+    updatedAt: now,
+  };
+  demoStore.supportTickets.unshift(ticket);
+  auditRegistry(registry, actor, "support.ticket.create", `ticket:${ticket.ticketNo}`, ticket.companyId);
+  pushActivity(actor, "Opened support ticket", `${ticket.ticketNo} · ${ticket.subject}`, "warning");
+  return ticket;
+}
+
+export function updateSupportTicket(
+  id: string,
+  patch: { status?: SupportTicket["status"]; assignedTo?: string; resolutionNote?: string },
+  actor: string,
+): SupportTicket | null {
+  const ticket = demoStore.supportTickets.find((t) => t.id === id);
+  if (!ticket) return null;
+  if (patch.status) ticket.status = patch.status;
+  if (patch.assignedTo !== undefined) ticket.assignedTo = patch.assignedTo;
+  if (patch.resolutionNote !== undefined) ticket.resolutionNote = patch.resolutionNote;
+  ticket.updatedAt = new Date().toISOString();
+  auditRegistry(registry, actor, `support.ticket.${ticket.status}`, `ticket:${ticket.ticketNo}`, ticket.companyId);
+  pushActivity(actor, `Updated ticket ${ticket.ticketNo} to ${ticket.status.replaceAll("_", " ")}`, ticket.subject, ticket.status === "resolved" ? "success" : "info");
+  return ticket;
+}
+
+export function listIntegrations(): IntegrationAdapter[] {
+  return demoStore.integrations;
+}
+
+export function updateIntegration(
+  id: string,
+  patch: { provider?: string; endpoint?: string; status?: IntegrationAdapter["status"] },
+  actor: string,
+): IntegrationAdapter | null {
+  const adapter = demoStore.integrations.find((i) => i.id === id);
+  if (!adapter) return null;
+  if (patch.provider !== undefined) adapter.provider = patch.provider.trim();
+  if (patch.endpoint !== undefined) adapter.endpoint = patch.endpoint.trim();
+  if (patch.status) adapter.status = patch.status;
+  auditRegistry(registry, actor, "integration.update", `integration:${adapter.key}`, "");
+  pushActivity(actor, "Updated integration config", adapter.name, "info");
+  return adapter;
+}
+
+export function triggerIntegrationSync(id: string, actor: string): IntegrationAdapter | null {
+  const adapter = demoStore.integrations.find((i) => i.id === id);
+  if (!adapter) return null;
+  adapter.lastSyncAt = new Date().toISOString();
+  adapter.status = adapter.status === "disconnected" ? "connected" : adapter.status;
+  adapter.lastSyncSummary = `Handshake & sync completed cleanly at ${adapter.lastSyncAt.slice(11, 19)} UTC · ${registry.holders.length} register records verified.`;
+  auditRegistry(registry, actor, "integration.sync", `integration:${adapter.key}`, "");
+  pushActivity(actor, "Synchronized integration", adapter.name, "success");
+  return adapter;
+}
 
 export function createMeeting(
   input: Omit<Meeting, "id" | "registered" | "attended" | "noticePublished" | "agenda"> & {
@@ -197,37 +868,139 @@ export function createMeeting(
   return meeting;
 }
 
-/* --- shareholder portal (Phase 5 demo) ------------------------------- */
+/* --- shareholder portal (live register & seeded lookup) --------------- */
 
 const normalize = (value: string) =>
   value.trim().toLowerCase().replace(/\s+/g, " ").replace(/\./g, "");
+
+function listCompanyParticipantIds(companyId: string): string[] {
+  const ids = new Set<string>();
+  const seededKeys = new Set<string>();
+  for (const p of DEMO_PARTICIPANTS) {
+    if (p.companyId === companyId) {
+      ids.add(p.id);
+      if (p.kind === "individual") seededKeys.add(`${p.companyId}:${p.boId}`);
+    }
+  }
+  for (const h of registry.holders) {
+    if (h.companyId === companyId && h.status === "active" && !seededKeys.has(`${h.companyId}:${h.boId}`)) {
+      ids.add(h.id);
+    }
+  }
+  for (const a of registry.authorizations) {
+    if (a.companyId === companyId && a.status === "approved" && a.participantId) {
+      ids.add(a.participantId);
+    }
+  }
+  return [...ids];
+}
 
 export function findParticipant(
   kind: ParticipantKind,
   boId: string,
   name: string,
-) {
+): DemoParticipant | undefined {
   const target = normalize(name);
-  return DEMO_PARTICIPANTS.map((p) => getParticipantById(p.id)).find(
-    (p) => p && p.kind === kind && p.boId.trim() === boId.trim() && normalize(p.name) === target,
+  const cleanBoId = boId.trim();
+
+  // 1. Seeded participants
+  const seededMatch = DEMO_PARTICIPANTS.map((p) => getParticipantById(p.id)).find(
+    (p) => p && p.kind === kind && p.boId.trim() === cleanBoId && normalize(p.name) === target,
   );
+  if (seededMatch) return seededMatch;
+
+  // 2. Dynamic individual shareholders from legal register
+  if (kind === "individual") {
+    const holder = registry.holders.find(
+      (h) =>
+        h.status === "active" &&
+        h.kind === "individual" &&
+        h.boId.trim() === cleanBoId &&
+        normalize(h.name) === target,
+    );
+    if (holder) return getParticipantById(holder.id);
+  }
+
+  // 3. Dynamic approved proxies / corporate representatives from registry authorizations
+  if (kind === "proxy" || kind === "corporate") {
+    const holder = registry.holders.find((h) => h.status === "active" && h.boId.trim() === cleanBoId);
+    if (holder) {
+      const auth = registry.authorizations.find(
+        (a) =>
+          a.holderId === holder.id &&
+          a.status === "approved" &&
+          a.kind === kind &&
+          normalize(a.name) === target,
+      );
+      if (auth) {
+        auth.participantId ??= `p_auth_${auth.id}`;
+        return getParticipantById(auth.participantId);
+      }
+    }
+  }
+
+  return undefined;
 }
 
-export function getParticipantById(id: string) {
+export function getParticipantById(id: string): DemoParticipant | undefined {
+  // 1. Seeded participants
   const participant = DEMO_PARTICIPANTS.find((p) => p.id === id);
-  if (!participant) return undefined;
-  const holder = registry.holders.find((h) => h.companyId === participant.companyId && h.boId === participant.boId && h.status === "active");
-  if (!holder) return undefined;
-  const shares = holdingBalance(registry.entries, holder.id);
-  return { ...participant, name: participant.kind === "individual" ? holder.name : participant.name, subjectName: holder.name, eligibleShares: shares, votingRights: participant.eligibleShares ? shares * (participant.votingRights / participant.eligibleShares) : 0 };
+  if (participant) {
+    const holder = registry.holders.find((h) => h.companyId === participant.companyId && h.boId === participant.boId && h.status === "active");
+    if (!holder) return undefined;
+    const shares = holdingBalance(registry.entries, holder.id);
+    return { ...participant, name: participant.kind === "individual" ? holder.name : participant.name, subjectName: holder.name, eligibleShares: shares, votingRights: participant.eligibleShares ? shares * (participant.votingRights / participant.eligibleShares) : 0 };
+  }
+
+  // 2. Active shareholders in the legal register
+  const holder = registry.holders.find((h) => h.id === id && h.status === "active");
+  if (holder) {
+    const shares = holdingBalance(registry.entries, holder.id);
+    return {
+      id: holder.id,
+      kind: holder.kind === "corporate" ? "corporate" : "individual",
+      boId: holder.boId,
+      name: holder.name,
+      subjectName: holder.name,
+      companyId: holder.companyId,
+      eligibleShares: shares,
+      votingRights: shares,
+      mobile: holder.mobile ? `${holder.mobile.slice(0, 2)}••••••••${holder.mobile.slice(-2)}` : "01••••••••00",
+      otp: "482391",
+    };
+  }
+
+  // 3. Approved proxies / corporate representatives in authorizations
+  const auth = registry.authorizations.find(
+    (a) => a.status === "approved" && (a.participantId === id || `p_auth_${a.id}` === id),
+  );
+  if (auth) {
+    const authHolder = registry.holders.find((h) => h.id === auth.holderId && h.status === "active");
+    if (!authHolder) return undefined;
+    const shares = holdingBalance(registry.entries, authHolder.id);
+    return {
+      id: auth.participantId ?? `p_auth_${auth.id}`,
+      kind: auth.kind,
+      boId: authHolder.boId,
+      name: auth.name,
+      subjectName: authHolder.name,
+      companyId: authHolder.companyId,
+      eligibleShares: shares,
+      votingRights: shares,
+      mobile: authHolder.mobile ? `${authHolder.mobile.slice(0, 2)}••••••••${authHolder.mobile.slice(-2)}` : "01••••••••00",
+      otp: "482391",
+    };
+  }
+
+  return undefined;
 }
 
 export function isPublishedMeeting(meeting: Meeting) {
   return !["draft", "notice_pending", "archived"].includes(meeting.status) && meeting.noticePublished;
 }
 function sameAccount(a: string, b: string) {
-  const first = DEMO_PARTICIPANTS.find((p) => p.id === a);
-  const second = DEMO_PARTICIPANTS.find((p) => p.id === b);
+  const first = DEMO_PARTICIPANTS.find((p) => p.id === a) ?? getParticipantById(a);
+  const second = DEMO_PARTICIPANTS.find((p) => p.id === b) ?? getParticipantById(b);
   return !!first && !!second && first.companyId === second.companyId && first.boId === second.boId;
 }
 export function participantRights(meetingId: string, participantId: string) {
@@ -237,12 +1010,14 @@ export function participantRights(meetingId: string, participantId: string) {
   // substitute one-share/one-vote when that configuration has not been wired.
   if (meeting.votingEntitlement && meeting.votingEntitlement !== "one_share_one_vote") return null;
   if ((participant.kind === "proxy" && !meeting.proxiesAllowed) || (participant.kind === "corporate" && !meeting.corporateRepresentatives)) return null;
-  const holder = registry.holders.find((h) => h.companyId === participant.companyId && h.boId === participant.boId)!;
-  if (participant.kind !== "individual" && !registry.authorizations.some((a) => a.holderId === holder.id && a.meetingId === meetingId && a.status === "approved" && a.kind === participant.kind && a.name === participant.name && a.participantId === participant.id)) return null;
+  const holder = registry.holders.find((h) => h.companyId === participant.companyId && h.boId === participant.boId && h.status === "active");
+  if (!holder) return null;
+  if (participant.kind !== "individual" && !registry.authorizations.some((a) => a.holderId === holder.id && a.meetingId === meetingId && a.status === "approved" && a.kind === participant.kind && a.name === participant.name && (a.participantId === participant.id || `p_auth_${a.id}` === participant.id))) return null;
   const registration = demoStore.portal.registrations.find((r) => r.meetingId === meetingId && sameAccount(r.participantId, participantId));
   const shares = registration?.shares ?? holdingBalance(registry.entries, holder.id, meeting.shareClassId, meeting.recordDate.slice(0, 10));
-  const seeded = DEMO_PARTICIPANTS.find((p) => p.id === participantId)!;
-  const votingRights = registration?.votingRights ?? shares * (seeded.votingRights / seeded.eligibleShares);
+  const seeded = DEMO_PARTICIPANTS.find((p) => p.id === participantId);
+  const ratio = seeded && seeded.eligibleShares ? seeded.votingRights / seeded.eligibleShares : 1;
+  const votingRights = registration?.votingRights ?? shares * ratio;
   return shares > 0 ? { shares, votingRights } : null;
 }
 export function canParticipate(meetingId: string, participantId: string) {
@@ -579,8 +1354,12 @@ export function notifyParticipant(participantId: string, meetingId: string, kind
   auditRegistry(registry, "system", "notification.create", `notification:${id}`, meeting.companyId);
 }
 function notifyMeeting(meetingId: string, kind: PortalNotification["kind"], title: string, detail: string, registeredOnly = false) {
-  for (const p of DEMO_PARTICIPANTS) {
-    if (participantRights(meetingId, p.id) && (!registeredOnly || isRegistered(meetingId, p.id))) notifyParticipant(p.id, meetingId, kind, title, detail);
+  const meeting = getMeeting(meetingId);
+  if (!meeting) return;
+  for (const pid of listCompanyParticipantIds(meeting.companyId)) {
+    if (participantRights(meetingId, pid) && (!registeredOnly || isRegistered(meetingId, pid))) {
+      notifyParticipant(pid, meetingId, kind, title, detail);
+    }
   }
 }
 export function setMeetingLifecycle(meetingId: string, transition: "start" | "end", actor: string) {

@@ -1,14 +1,26 @@
-import { ComingSoon } from "@/components/coming-soon";
 import { requirePermission } from "@/lib/require-permission";
+import { getCompanySettings, listCompanies } from "@/lib/demo-store";
+import { PageHeader } from "@/components/page-header";
+import { SettingsClient } from "./settings-client";
+
 export const metadata = { title: "Settings" };
-export default async function Page() {
-  await requirePermission("settings.manage");
+
+export default async function SettingsPage() {
+  const session = await requirePermission("settings.manage");
+  const companies = listCompanies().filter(
+    (c) => session.role === "Platform Super Admin" || session.companyIds.includes(c.id),
+  );
+  const initialSettings = Object.fromEntries(
+    companies.map((c) => [c.id, getCompanySettings(c.id)]),
+  );
+
   return (
-    <ComingSoon
-      title="Settings"
-      phase="Phase 3"
-      description="Workspace, company and legal-rule configuration."
-      scope={["Company profile, seals and authorised signatories", "Legally configurable quorum, poll-demand and proxy limits — never hard-coded", "Numbering schemes (notices, minutes, certificates)", "Retention and backup policy controls"]}
-    />
+    <>
+      <PageHeader
+        title="Settings"
+        description="Per-entity legal governance rules (quorum, poll demand thresholds, proxy deadlines) and authorised signatories."
+      />
+      <SettingsClient companies={companies} initialSettings={initialSettings} />
+    </>
   );
 }

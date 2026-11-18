@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { requirePermission } from "@/lib/require-permission";
 import { hasPermission } from "@/lib/permissions";
-import { getCompany, getMeeting, listQuestions } from "@/lib/demo-store";
+import { getCompany, getLiveState, getMeeting, listQuestions } from "@/lib/demo-store";
 import { PageHeader } from "@/components/page-header";
 import { MeetingModeLabel, MeetingStatusBadge, MeetingTypeBadge } from "@/components/status-badge";
 import { MeetingControls } from "@/components/meeting-controls";
@@ -193,12 +193,12 @@ export default async function MeetingOverviewPage({
               {meeting.noticePublished ? (
                 <p className="flex items-start gap-2 text-[12.5px] leading-snug text-success">
                   <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  Notice published to the shareholder portal. SMS/email delivery and statutory filing are not connected in this demo.
+                  Notice published to the shareholder portal and recorded in the dispatch ledger.
                 </p>
               ) : (
                 <p className="flex items-start gap-2 text-[12.5px] leading-snug text-warning">
                   <Clock3 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  Notice not published yet. It is drafted and awaiting board approval before dispatch.
+                  Notice not published yet. Dispatch via Statutory Notices to open shareholder visibility.
                 </p>
               )}
               <dl className="mt-3 space-y-1.5 text-[11.5px] text-muted-foreground">
@@ -206,17 +206,32 @@ export default async function MeetingOverviewPage({
                 <div className="flex justify-between gap-3"><dt>Mode</dt><dd><MeetingModeLabel mode={meeting.mode} /></dd></div>
                 <div className="flex justify-between gap-3"><dt>Company</dt><dd className="truncate">{company?.shortName}</dd></div>
               </dl>
+              <Link
+                href={`/governance/notices?meeting=${meeting.id}`}
+                className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-brand hover:underline"
+              >
+                Manage & dispatch notice
+                <span aria-hidden>→</span>
+              </Link>
             </div>
           </section>
 
-          <section aria-labelledby="phases-heading" className="rounded-lg border border-dashed border-border bg-card/50 p-4">
-            <h2 id="phases-heading" className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              Certification & results — Phase 6
+          <section aria-labelledby="scrutiny-heading" className="rounded-lg border border-border bg-card p-5 shadow-card">
+            <h2 id="scrutiny-heading" className="text-[13px] font-semibold">
+              Resolution Scrutiny & Statutory Pack
             </h2>
             <p className="mt-1.5 text-[12px] leading-5 text-muted-foreground">
-              Result calculation, scrutiny, certified minutes and the regulator filing pack ship in
-              Phase 6. The shareholder live room below and the moderation queue above are live now.
+              {meeting.agenda.length} tabled resolution{meeting.agenda.length === 1 ? "" : "s"} ·{" "}
+              {formatNumber(getLiveState(meeting.id).agenda.reduce((s, a) => s + a.votes, 0))} votes recorded.
+              Export scrutiny sheets, formal minutes and RJSC/BSEC packs.
             </p>
+            <Link
+              href={`/reports?meeting=${meeting.id}`}
+              className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-brand hover:underline"
+            >
+              Open certified reports & minutes
+              <span aria-hidden>→</span>
+            </Link>
           </section>
         </div>
       </div>

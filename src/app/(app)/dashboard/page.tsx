@@ -59,7 +59,9 @@ export default async function DashboardPage() {
   const agendaMeetings = upcoming.slice(0, 4);
   const featuredMeeting = upcoming[0] ?? null;
 
-  const approvals = listApprovals().filter((a) => visibleIds.has(a.companyId));
+  const approvals = listApprovals().filter(
+    (a) => visibleIds.has(a.companyId) && (!a.status || a.status === "pending"),
+  );
   const activity = listActivity().slice(0, 6);
   const lastCompleted = myMeetings.find((m) => m.status === "completed");
   const lastTurnout = lastCompleted

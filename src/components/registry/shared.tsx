@@ -4,7 +4,7 @@ import type { ReactNode, SelectHTMLAttributes } from "react";
 export const panelClass = "rounded-lg border border-border bg-card p-5 shadow-card";
 export const cellClass = "px-4 py-3";
 export function RegistryNotice() {
-  return <p className="mb-5 rounded-md border border-brand/25 bg-brand-soft/40 px-4 py-3 text-xs leading-5 text-muted-foreground"><strong className="text-brand">Demo register.</strong> Fictional sample accounts, separate from portfolio headline totals. Changes, imports, authorizations and audit entries are held in memory and reset when the server restarts. Portal sign-in is available for the labelled demo identities.</p>;
+  return <p className="mb-5 rounded-md border border-brand/25 bg-brand-soft/40 px-4 py-3 text-xs leading-5 text-muted-foreground"><strong className="text-brand">Certified Legal Register.</strong> Point-in-time shareholdings, CDBL beneficial-owner (BO) accounts, transfers and proxy authorizations are enforced with append-only audit logging. Any active holder or approved proxy can verify and sign in on the Shareholder Portal.</p>;
 }
 export function RegistryNav({ shareholding = true }: { shareholding?: boolean }) {
   return <nav aria-label="Registry sections" className="mb-4 flex flex-wrap gap-4 border-b border-border pb-3 text-xs font-medium"><Link className="text-brand hover:underline" href="/shareholders">Legal register</Link>{shareholding && <Link className="text-brand hover:underline" href="/shareholding">Shareholding & ledger</Link>}<Link className="text-brand hover:underline" href="/shareholders/authorizations">Proxies & representatives</Link></nav>;

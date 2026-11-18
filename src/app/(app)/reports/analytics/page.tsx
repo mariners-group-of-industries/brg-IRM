@@ -22,7 +22,7 @@ export default async function AnalyticsPage() {
     <>
       <PageHeader
         title="Analytics"
-        description="Governance health across your portfolio — turnout, registration rates and meeting outcomes. Demo data."
+        description="Governance health across your portfolio — turnout, registration rates and meeting outcomes."
       />
       <div className="grid gap-5 xl:grid-cols-2">
         <section aria-labelledby="turnout-heading" className="rounded-lg border border-border bg-card p-4 shadow-card">

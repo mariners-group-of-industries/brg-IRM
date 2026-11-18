@@ -46,7 +46,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Organization",
     items: [
       { label: "Companies", href: "/companies", icon: Building2, permission: "companies.view", ready: true },
-      { label: "Investors", href: "/investors", icon: PieChart, permission: "investors.view", ready: false },
+      { label: "Investors", href: "/investors", icon: PieChart, permission: "investors.view", ready: true },
       { label: "Shareholders", href: "/shareholders", icon: Users, permission: "shareholders.view", ready: true },
       { label: "Shareholding", href: "/shareholding", icon: Wallet, permission: "shareholding.view", ready: true },
     ],
@@ -55,22 +55,22 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Corporate Governance",
     items: [
       { label: "AGM / EGM", href: "/governance/meetings", icon: CalendarDays, permission: "meetings.view", ready: true },
-      { label: "Notices", href: "/governance/notices", icon: Megaphone, permission: "notices.view", ready: false },
+      { label: "Notices", href: "/governance/notices", icon: Megaphone, permission: "notices.view", ready: true },
       { label: "Documents", href: "/governance/documents", icon: FolderOpen, permission: "documents.view", ready: true },
     ],
   },
   {
     label: "Operations",
     items: [
-      { label: "Communications", href: "/operations/communications", icon: ScrollText, permission: "communications.view", ready: false },
+      { label: "Communications", href: "/operations/communications", icon: ScrollText, permission: "communications.view", ready: true },
       { label: "Approvals", href: "/operations/approvals", icon: ClipboardCheck, permission: "approvals.view", ready: true },
-      { label: "Investor Support", href: "/operations/support", icon: LifeBuoy, permission: "support.view", ready: false },
+      { label: "Investor Support", href: "/operations/support", icon: LifeBuoy, permission: "support.view", ready: true },
     ],
   },
   {
     label: "Reports",
     items: [
-      { label: "Reports", href: "/reports", icon: FileText, permission: "reports.view", ready: false },
+      { label: "Reports", href: "/reports", icon: FileText, permission: "reports.view", ready: true },
       { label: "Analytics", href: "/reports/analytics", icon: LineChart, permission: "analytics.view", ready: true },
       { label: "Audit Logs", href: "/reports/audit", icon: ShieldCheck, permission: "audit.view", ready: true },
     ],
@@ -78,9 +78,9 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "System",
     items: [
-      { label: "Users & Roles", href: "/system/users", icon: UsersRound, permission: "users.view", ready: false },
-      { label: "Settings", href: "/system/settings", icon: Settings, permission: "settings.manage", ready: false },
-      { label: "Integrations", href: "/system/integrations", icon: Plug, permission: "integrations.manage", ready: false },
+      { label: "Users & Roles", href: "/system/users", icon: UsersRound, permission: "users.view", ready: true },
+      { label: "Settings", href: "/system/settings", icon: Settings, permission: "settings.manage", ready: true },
+      { label: "Integrations", href: "/system/integrations", icon: Plug, permission: "integrations.manage", ready: true },
     ],
   },
 ];

@@ -82,6 +82,8 @@ export interface ActivityItem {
   tone: "info" | "success" | "warning";
 }
 
+export type ApprovalStatus = "pending" | "approved" | "rejected";
+
 export interface ApprovalItem {
   id: string;
   title: string;
@@ -90,6 +92,97 @@ export interface ApprovalItem {
   requestedAt: string;
   dueDate: string;
   kind: "notice" | "resolution" | "document" | "proxy_batch";
+  status?: ApprovalStatus;
+  decidedBy?: string;
+  decidedAt?: string;
+  note?: string;
+}
+
+export interface CompanySettings {
+  companyId: string;
+  quorumPercent: number;
+  quorumMinMembers: number;
+  pollDemandThresholdPercent: number;
+  defaultProxyLimit: number;
+  proxyDeadlineHoursBefore: number;
+  noticeDaysRequired: number;
+  signatoryName: string;
+  signatoryTitle: string;
+  sealReference: string;
+  updatedAt: string;
+}
+
+export interface InvestorRecord {
+  id: string;
+  companyId: string;
+  kind: "individual" | "corporate" | "foreign";
+  name: string;
+  tin: string;
+  email: string;
+  phone: string;
+  country: string;
+  kycStatus: "verified" | "pending" | "expired" | "rejected";
+  relationshipManager: string;
+  communicationPreference: "email" | "sms" | "both";
+  linkedBoIds: string[];
+  notes: string;
+  updatedAt: string;
+}
+
+export interface NoticeDispatchRecord {
+  id: string;
+  meetingId: string;
+  companyId: string;
+  channel: "portal" | "email" | "sms" | "newspaper";
+  language: "en" | "bn" | "bilingual";
+  recipientCount: number;
+  dispatchedBy: string;
+  dispatchedAt: string;
+  status: "delivered" | "published";
+  reference: string;
+}
+
+export interface CommunicationBroadcast {
+  id: string;
+  companyId: string;
+  meetingId?: string;
+  category: "notice" | "reminder" | "dividend" | "results" | "general";
+  subject: string;
+  body: string;
+  channels: ("portal" | "email" | "sms")[];
+  recipientCount: number;
+  sentBy: string;
+  sentAt: string;
+  status: "delivered";
+}
+
+export interface SupportTicket {
+  id: string;
+  ticketNo: string;
+  companyId: string;
+  boId: string;
+  shareholderName: string;
+  category: "bo_verification" | "proxy_instrument" | "dividend_claim" | "meeting_access" | "register_update";
+  subject: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+  status: "open" | "in_progress" | "resolved";
+  assignedTo: string;
+  resolutionNote?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntegrationAdapter {
+  id: string;
+  key: "cdbl" | "sms_gateway" | "email_smtp" | "video_bridge" | "rjsc_filing";
+  name: string;
+  provider: string;
+  category: string;
+  status: "connected" | "sandbox" | "disconnected";
+  endpoint: string;
+  lastSyncAt: string;
+  lastSyncSummary: string;
 }
 
 export interface AppNotification {

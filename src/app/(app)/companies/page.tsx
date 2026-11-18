@@ -1,15 +1,17 @@
 import Link from "next/link";
-import { ArrowRight, Building2, Check, Plus } from "lucide-react";
+import { ArrowRight, Building2, Check } from "lucide-react";
 import { requirePermission } from "@/lib/require-permission";
+import { hasPermission } from "@/lib/permissions";
 import { listCompanies } from "@/lib/demo-store";
 import { formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
+import { AddCompanyForm } from "./add-company-form";
 
 export const metadata = { title: "Companies" };
 
 export default async function CompaniesPage() {
   const session = await requirePermission("companies.view");
+  const canCreate = hasPermission(session.role, "companies.create");
   const companies = listCompanies().filter(
     (company) =>
       session?.role === "Platform Super Admin" || session?.companyIds.includes(company.id),
@@ -21,10 +23,7 @@ export default async function CompaniesPage() {
         title="Companies"
         description="Legal entities under this workspace. Tenancy is enforced per company — ids of companies you cannot see resolve to 404."
       >
-        <Button className="h-9" variant="outline" disabled title="Company onboarding is completed with the registry import in Phase 3">
-          <Plus className="h-4 w-4" aria-hidden />
-          Add company
-        </Button>
+        {canCreate && <AddCompanyForm />}
       </PageHeader>
 
       <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Check,
   ClipboardCheck,
@@ -11,10 +12,11 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import type { ApprovalItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { decideApprovalAction } from "./actions";
 
 const kindIcon = {
   notice: Megaphone,
@@ -37,20 +39,26 @@ export function ApprovalsQueue({
   approvals: (ApprovalItem & { companyName: string })[];
   canAct: boolean;
 }) {
-  const [decided, setDecided] = useState<Record<string, "approved" | "rejected">>({});
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   const decide = (id: string, decision: "approved" | "rejected") => {
-    startTransition(() => {
-      // Demo mode: decision is recorded client-side only and reported as such.
-      setDecided((current) => ({ ...current, [id]: decision }));
+    startTransition(async () => {
+      const res = await decideApprovalAction(id, decision);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
       toast.success(
-        decision === "approved" ? "Approved (demo — not persisted)" : "Rejected (demo — not persisted)",
+        decision === "approved"
+          ? "Approval recorded and written to audit log"
+          : "Rejection recorded and written to audit log",
       );
+      router.refresh();
     });
   };
 
-  const open = approvals.filter((approval) => !decided[approval.id]);
+  const open = approvals.filter((approval) => !approval.status || approval.status === "pending");
 
   if (approvals.length === 0) {
     return (
@@ -67,18 +75,18 @@ export function ApprovalsQueue({
   return (
     <div className="max-w-4xl space-y-3">
       <p className="flex items-center justify-between text-[11.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-        <span>{open.length} open · {approvals.length - open.length} decided (this session)</span>
+        <span>{open.length} pending · {approvals.length - open.length} decided</span>
         {!canAct && <span>Read-only — your role cannot approve</span>}
       </p>
       {approvals.map((approval) => {
         const Icon = kindIcon[approval.kind];
-        const outcome = decided[approval.id];
+        const outcome = approval.status && approval.status !== "pending" ? approval.status : null;
         return (
           <article
             key={approval.id}
             className={cn(
               "rounded-lg border border-border bg-card p-4 shadow-card transition-opacity",
-              outcome && "opacity-60",
+              outcome && "opacity-75",
             )}
           >
             <div className="flex flex-wrap items-start gap-3">
@@ -91,15 +99,22 @@ export function ApprovalsQueue({
                   {kindLabel[approval.kind]} · {approval.companyName} · requested by {approval.requestedBy} ·
                   due {formatDate(approval.dueDate)}
                 </p>
+                {outcome && approval.decidedBy && (
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Decided by {approval.decidedBy}{approval.decidedAt ? ` on ${formatDateTime(approval.decidedAt)}` : ""}
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
                 {outcome ? (
-                  <span className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize",
-                    outcome === "approved"
-                      ? "border-success/30 bg-success-soft text-success"
-                      : "border-destructive/30 bg-danger-soft text-destructive",
-                  )}>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize",
+                      outcome === "approved"
+                        ? "border-success/30 bg-success-soft text-success"
+                        : "border-destructive/30 bg-danger-soft text-destructive",
+                    )}
+                  >
                     {outcome === "approved" ? <Check className="h-3.5 w-3.5" aria-hidden /> : <X className="h-3.5 w-3.5" aria-hidden />}
                     {outcome}
                   </span>
@@ -119,8 +134,7 @@ export function ApprovalsQueue({
         );
       })}
       <p className="text-[11px] text-muted-foreground">
-        Approvals are audit-logged with actor, timestamp and decision once the Phase 3 database is wired.
-        In this demo build, decisions live only in this browser session.
+        All approval and rejection decisions are recorded immediately to the append-only governance audit trail.
       </p>
     </div>
   );

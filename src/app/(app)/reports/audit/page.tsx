@@ -19,12 +19,12 @@ export default async function AuditPage() {
     <>
       <PageHeader
         title="Audit Logs"
-        description="Privileged actions including register changes, imports and personal-data access. Demo entries reset on restart; durable retention arrives with database wiring."
+        description="Privileged actions including register changes, imports, approvals, settings and personal-data access."
       />
       <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
         <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-4 py-2 text-[11px] font-medium text-muted-foreground">
           <ShieldCheck className="h-4 w-4 text-brand" aria-hidden />
-          Append-only in-memory demo · database enforcement is planned
+          Append-only governance audit log · personal data and ballot choices are excluded
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[44rem] text-left text-[12px]">

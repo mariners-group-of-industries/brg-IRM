@@ -1,14 +1,21 @@
-import { ComingSoon } from "@/components/coming-soon";
 import { requirePermission } from "@/lib/require-permission";
+import { listIntegrations } from "@/lib/demo-store";
+import { PageHeader } from "@/components/page-header";
+import { IntegrationsClient } from "./integrations-client";
+
 export const metadata = { title: "Integrations" };
-export default async function Page() {
+
+export default async function IntegrationsPage() {
   await requirePermission("integrations.manage");
+  const adapters = listIntegrations();
+
   return (
-    <ComingSoon
-      title="Integrations"
-      phase="Phase 7"
-      description="External systems — adapters, never implicit dependencies."
-      scope={["CDBL / BO-account sync for beneficial ownership", "Video providers (Zoom, Webex) behind explicit adapters", "SMS and email gateways with delivery webhooks", "E-signature and RJSC filing connectors"]}
-    />
+    <>
+      <PageHeader
+        title="Integrations"
+        description="Configure and test CDBL beneficial-owner sync, SMS OTP gateway, email relay, live video bridge and RJSC filing adapters."
+      />
+      <IntegrationsClient adapters={adapters} />
+    </>
   );
 }

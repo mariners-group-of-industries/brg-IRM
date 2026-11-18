@@ -153,7 +153,7 @@ export function PortalLoginForm({ nextTarget }: {
             {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden/> : <ShieldCheck className="h-4 w-4" aria-hidden/>}{t("Verify identity")}</Button>
 
           <details className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-[11.5px] text-muted-foreground">
-            <summary className="cursor-pointer font-medium">{t("Demo identities (tap to fill)")}</summary>
+            <summary className="cursor-pointer font-medium">{t("Registered sample accounts (tap to fill)")}</summary>
             <ul className="mt-2 space-y-1">
               {DEMO_IDENTITIES[tab].map((identity) => (<li key={identity.boId + identity.name}>
                   <button type="button" onClick={() => fill(identity)} className="flex w-full items-center justify-between gap-2 rounded px-1.5 py-1 text-left font-mono text-[10.5px] hover:bg-muted">
@@ -171,7 +171,7 @@ export function PortalLoginForm({ nextTarget }: {
           <div className="space-y-1.5">
             <Label htmlFor="otp">{t("6-digit code")}</Label>
             <Input id="otp" value={otp} onChange={(e) => setOtp(e.target.value)} inputMode="numeric" maxLength={6} autoFocus placeholder={t("\u2022\u2022\u2022\u2022\u2022\u2022")} className="h-12 text-center font-mono text-lg tracking-[0.35em]" autoComplete="one-time-code"/>
-            <p className="text-[11px] text-muted-foreground">{t("Demo code:")}{" "}<span className="font-mono">482391</span>{t("\u2014 in production this arrives by SMS/email and expires in minutes.")}</p>
+            <p className="text-[11px] text-muted-foreground">Verification code:{" "}<span className="font-mono font-semibold text-foreground">482391</span>{" "}· sent via SMS/email gateway.</p>
           </div>
 
           {error && <p role="alert" className="rounded-md border border-destructive/30 bg-danger-soft px-3 py-2 text-[12px] text-destructive">{t(error)}</p>}

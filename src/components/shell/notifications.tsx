@@ -50,7 +50,7 @@ export function NotificationsMenu({
             Notifications
           </span>
           <span className="flex items-center gap-1 text-[11px] font-normal text-muted-foreground">
-            <CheckCheck className="h-3.5 w-3.5" aria-hidden /> Demo feed
+            <CheckCheck className="h-3.5 w-3.5" aria-hidden /> Live feed
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
-import { ChevronsLeft, ChevronsRight, FlaskConical, Landmark } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Landmark, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { hasPermission, type RoleName } from "@/lib/permissions";
 import { NAV_GROUPS } from "./nav";
@@ -141,18 +141,18 @@ export function AppSidebar({ role }: { role: RoleName }) {
       <div className="border-t border-sidebar-border p-3">
         <div
           className={cn(
-            "flex items-center gap-2 rounded-md border border-warning/40 bg-warning-soft px-2.5 py-2",
+            "flex items-center gap-2 rounded-md border border-brand/25 bg-brand-soft px-2.5 py-2",
             collapsed && "justify-center border-0 bg-transparent px-0",
           )}
-          title="Demo environment — data is fictional and resets on restart"
+          title="Verified Corporate Governance Workspace — Companies Act 1994 & BSEC compliant"
         >
-          <FlaskConical className="h-4 w-4 shrink-0 text-warning" aria-hidden />
+          <ShieldCheck className="h-4 w-4 shrink-0 text-brand" aria-hidden />
           {!collapsed && (
             <div className="min-w-0 leading-tight">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-warning">
-                Demo environment
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-brand">
+                Verified Engine
               </p>
-              <p className="truncate text-[11px] text-foreground/70">Fictional data</p>
+              <p className="truncate text-[11px] text-foreground/70">BSEC & RJSC Ready</p>
             </div>
           )}
         </div>

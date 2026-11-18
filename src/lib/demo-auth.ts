@@ -4,7 +4,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { cookies } from "next/headers";
 import { createSessionCookie, clearSessionCookie } from "./session";
-import { DEMO_USERS } from "./demo-users";
+import { listStaffUsers } from "./demo-users";
 
 /**
  * Demo authentication (development mode).
@@ -36,10 +36,11 @@ export async function loginAction(input: {
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const user = DEMO_USERS.find((u) => u.email === parsed.data.email);
+  const user = listStaffUsers().find((u) => u.email === parsed.data.email);
   const candidate = sha256(parsed.data.password);
   const matches =
     user &&
+    user.status !== "suspended" &&
     candidate.length === user.passwordSha256.length &&
     timingSafeEqual(Buffer.from(candidate), Buffer.from(user.passwordSha256));
 

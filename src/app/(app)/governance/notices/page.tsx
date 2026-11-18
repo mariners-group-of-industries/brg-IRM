@@ -1,14 +1,47 @@
-import { ComingSoon } from "@/components/coming-soon";
 import { requirePermission } from "@/lib/require-permission";
+import { hasPermission } from "@/lib/permissions";
+import {
+  getCompanySettings,
+  listCompanies,
+  listMeetings,
+  listNoticeDispatches,
+} from "@/lib/demo-store";
+import { PageHeader } from "@/components/page-header";
+import { NoticesClient } from "./notices-client";
+
 export const metadata = { title: "Notices" };
-export default async function Page() {
-  await requirePermission("notices.view");
+
+export default async function NoticesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ meeting?: string }>;
+}) {
+  const session = await requirePermission("notices.view");
+  const { meeting: initialMeetingId } = await searchParams;
+  const companies = listCompanies().filter(
+    (c) => session.role === "Platform Super Admin" || session.companyIds.includes(c.id),
+  );
+  const visibleIds = new Set(companies.map((c) => c.id));
+  const meetings = listMeetings().filter((m) => visibleIds.has(m.companyId));
+  const dispatches = listNoticeDispatches().filter((d) => visibleIds.has(d.companyId));
+  const settingsByCompany = Object.fromEntries(
+    companies.map((c) => [c.id, getCompanySettings(c.id)]),
+  );
+
   return (
-    <ComingSoon
-      title="Notices"
-      phase="Phase 5"
-      description="Statutory notice drafting, 21-day rule enforcement and multi-channel dispatch."
-      scope={["Bilingual (Bangla/English) notice templates", "Automatic 21-day compliance check against meeting date", "SMS, email, newspaper and Gazette dispatch tracking", "Delivery receipts and reminder automation"]}
-    />
+    <>
+      <PageHeader
+        title="Notices"
+        description="Statutory notice compliance (Companies Act / BSEC), bilingual preview and multi-channel dispatch ledger."
+      />
+      <NoticesClient
+        meetings={meetings}
+        companies={companies}
+        settingsByCompany={settingsByCompany}
+        dispatches={dispatches}
+        canSend={hasPermission(session.role, "notices.send")}
+        initialMeetingId={initialMeetingId}
+      />
+    </>
   );
 }

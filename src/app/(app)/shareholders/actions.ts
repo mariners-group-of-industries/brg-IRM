@@ -66,7 +66,7 @@ export async function createAuthorizationAction(input: unknown) {
   const ruleError = authorizationRuleError(meeting, holder, data.kind, registry.authorizations);
   if (ruleError) return { ok: false as const, error: ruleError };
   if (registry.authorizations.some((a) => a.holderId === holder.id && a.meetingId === meeting.id && a.name === data.name && ["pending", "approved"].includes(a.status))) return { ok: false as const, error: "This person already has an active appointment for this meeting" };
-  const participantId = DEMO_PARTICIPANTS.find((p) => p.companyId === holder.companyId && p.boId === holder.boId && p.kind === data.kind && p.name === data.name)?.id;
+  const participantId = DEMO_PARTICIPANTS.find((p) => p.companyId === holder.companyId && p.boId === holder.boId && p.kind === data.kind && p.name === data.name)?.id ?? `p_auth_${crypto.randomUUID().slice(0, 8)}`;
   const authorization = { ...data, participantId, id: crypto.randomUUID(), companyId: holder.companyId, status: "pending" as const, at: new Date().toISOString(), reason: "" };
   registry.authorizations.push(authorization);
   auditRegistry(registry, session.email, "authorization.submit", `authorization:${authorization.id}`, holder.companyId);
@@ -87,7 +87,12 @@ export async function decideAuthorizationAction(id: string, status: "approved" |
   }
   authorization.status = status; authorization.reason = parsed.data.reason;
   const holder=registry.holders.find(h=>h.id===authorization.holderId)!;
-  for (const p of DEMO_PARTICIPANTS.filter(p=>p.companyId===holder.companyId&&p.boId===holder.boId&&(p.kind==='individual'||p.id===authorization.participantId))) notifyParticipant(p.id,authorization.meetingId,"appointment","Appointment updated",`Appointment ${status}`);
+  const targets = new Set([
+    ...DEMO_PARTICIPANTS.filter(p=>p.companyId===holder.companyId&&p.boId===holder.boId&&(p.kind==='individual'||p.id===authorization.participantId)).map(p=>p.id),
+    ...(holder.kind==='individual' ? [holder.id] : []),
+    ...(authorization.participantId ? [authorization.participantId] : []),
+  ]);
+  for (const pid of targets) notifyParticipant(pid,authorization.meetingId,"appointment","Appointment updated",`Appointment ${status}`);
   auditRegistry(registry, session.email, `authorization.${status}`, `authorization:${id}`, authorization.companyId);
   refresh(); return { ok: true as const };
 }

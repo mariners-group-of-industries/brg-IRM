@@ -17,7 +17,7 @@ export async function requestProxyAction(input: unknown) {
   const ruleError = authorizationRuleError(meeting, holder, "proxy", registry.authorizations);
   if (ruleError) return { ok: false as const, error: ruleError };
   if (registry.authorizations.some((a) => a.holderId === holder.id && a.meetingId === meeting.id && a.name === data.name && ["pending", "approved"].includes(a.status))) return { ok: false as const, error: "This person already has an active appointment for this meeting" };
-  const participantId = DEMO_PARTICIPANTS.find((p) => p.companyId === holder.companyId && p.boId === holder.boId && p.kind === "proxy" && p.name === data.name)?.id;
+  const participantId = DEMO_PARTICIPANTS.find((p) => p.companyId === holder.companyId && p.boId === holder.boId && p.kind === "proxy" && p.name === data.name)?.id ?? `p_auth_${crypto.randomUUID().slice(0, 8)}`;
   const id = crypto.randomUUID(); registry.authorizations.push({ ...data, id, companyId: holder.companyId, status: "pending", reason: "", at: new Date().toISOString(), participantId });
   auditRegistry(registry, `participant:${session.participantId}`, "authorization.submit", `authorization:${id}`, holder.companyId);
   revalidatePath("/portal/account"); revalidatePath("/shareholders", "layout"); return { ok: true as const };

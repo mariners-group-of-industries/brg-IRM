@@ -14,6 +14,8 @@ export interface DemoUser {
   role: RoleName;
   companyIds: string[];
   passwordSha256: string;
+  status?: "active" | "invited" | "suspended";
+  createdAt?: string;
 }
 
 const sha256 = (value: string) =>
@@ -31,6 +33,8 @@ export const DEMO_USERS: DemoUser[] = [
     role: "Platform Super Admin",
     companyIds: ["co_meghna", "co_delta", "co_karnaphuli", "co_padma"],
     passwordSha256: DEMO_PASSWORD_SHA256,
+    status: "active",
+    createdAt: "2026-01-10T00:00:00.000Z",
   },
   {
     id: "usr_secretary",
@@ -39,6 +43,8 @@ export const DEMO_USERS: DemoUser[] = [
     role: "Company Secretary",
     companyIds: ["co_meghna"],
     passwordSha256: DEMO_PASSWORD_SHA256,
+    status: "active",
+    createdAt: "2026-01-12T00:00:00.000Z",
   },
   {
     id: "usr_viewer",
@@ -47,5 +53,77 @@ export const DEMO_USERS: DemoUser[] = [
     role: "Restricted Viewer",
     companyIds: ["co_delta"],
     passwordSha256: DEMO_PASSWORD_SHA256,
+    status: "active",
+    createdAt: "2026-01-15T00:00:00.000Z",
   },
 ];
+
+const globalUsers = globalThis as unknown as { __irmUsers?: DemoUser[] };
+
+function userStore(): DemoUser[] {
+  return (globalUsers.__irmUsers ??= structuredClone(DEMO_USERS));
+}
+
+export function listStaffUsers(): DemoUser[] {
+  return userStore().map((u) => ({
+    ...u,
+    status: u.status ?? "active",
+    createdAt: u.createdAt ?? "2026-01-15T00:00:00.000Z",
+  }));
+}
+
+export function createStaffUser(input: {
+  name: string;
+  email: string;
+  password: string;
+  role: RoleName;
+  companyIds: string[];
+}): DemoUser {
+  const users = userStore();
+  const normalizedEmail = input.email.trim().toLowerCase();
+  if (users.some((u) => u.email === normalizedEmail)) {
+    throw new Error("A staff user with this email already exists");
+  }
+  const user: DemoUser = {
+    id: `usr_${crypto.randomUUID().slice(0, 8)}`,
+    email: normalizedEmail,
+    name: input.name.trim(),
+    role: input.role,
+    companyIds: [...new Set(input.companyIds)],
+    passwordSha256: sha256(input.password),
+    status: "active",
+    createdAt: new Date().toISOString(),
+  };
+  users.push(user);
+  return user;
+}
+
+export function updateStaffUser(
+  id: string,
+  patch: {
+    role?: RoleName;
+    companyIds?: string[];
+    status?: "active" | "invited" | "suspended";
+    password?: string;
+  },
+): DemoUser {
+  const users = userStore();
+  const user = users.find((u) => u.id === id);
+  if (!user) {
+    throw new Error("Staff user not found");
+  }
+  if (patch.role) user.role = patch.role;
+  if (patch.companyIds) user.companyIds = [...new Set(patch.companyIds)];
+  if (patch.status) user.status = patch.status;
+  if (patch.password) user.passwordSha256 = sha256(patch.password);
+  return user;
+}
+
+export function grantCompanyToAdmins(companyId: string) {
+  const users = userStore();
+  for (const user of users) {
+    if (user.role === "Platform Super Admin" && !user.companyIds.includes(companyId)) {
+      user.companyIds.push(companyId);
+    }
+  }
+}
