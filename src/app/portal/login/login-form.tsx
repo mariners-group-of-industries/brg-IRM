@@ -181,24 +181,7 @@ export function PortalLoginForm({ nextTarget }: { nextTarget: string }) {
             <div className="space-y-2">
               <h1 className="text-3xl font-extrabold tracking-tight text-[#192D50] sm:text-4xl lg:text-[44px] lg:leading-[1.15]">
                 Your Voice. Your Share. <br />
-                <span className="relative inline-block text-[#192D50]">
-                  Your Meeting.
-                  {/* Subtle curved underline under Meeting */}
-                  <svg
-                    className="absolute -bottom-2.5 left-0 w-full overflow-visible text-[#0C9488]"
-                    viewBox="0 0 100 12"
-                    fill="none"
-                    preserveAspectRatio="none"
-                    aria-hidden
-                  >
-                    <path
-                      d="M2 8C30 1 70 14 98 4"
-                      stroke="currentColor"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </span>
+                Your Meeting.
               </h1>
               <p className="pt-2 text-base leading-relaxed text-slate-600 sm:text-lg">
                 {t(
