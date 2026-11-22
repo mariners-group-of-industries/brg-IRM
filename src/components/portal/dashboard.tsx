@@ -29,7 +29,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RegisterButton } from "./register-button";
-import { DemoDisclosure } from "./demo-disclosure";
 import { portalMeetingDate, portalMeetingTime } from "@/lib/portal-format";
 import type { getPortalDashboard, PortalMeetingSummary } from "@/lib/portal-dashboard";
 import { usePortalLanguage } from "./language-provider";
@@ -199,8 +198,6 @@ export function ShareholderDashboard({
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
               <span>{t("Verified Shareholder")}</span>
             </div>
-
-            <DemoDisclosure />
           </div>
         </div>
       </section>
@@ -768,6 +765,10 @@ function FeaturedMeetingCard({ summary }: { summary: PortalMeetingSummary }) {
   const votesCast = Math.min(summary.votesCast, agendaCount);
   const percent = agendaCount ? (votesCast / agendaCount) * 100 : 0;
 
+  const displayTitle = meeting.title.startsWith(meeting.type)
+    ? t(meeting.title)
+    : `${meeting.type} — ${t(meeting.title)}`;
+
   // Deadline dates
   const openDeadline = summary.deadlines.find((d) => d.kind === "registration_open");
   const closeDeadline = summary.deadlines.find((d) => d.kind === "registration_close");
@@ -812,7 +813,7 @@ function FeaturedMeetingCard({ summary }: { summary: PortalMeetingSummary }) {
                 href={`/portal/meetings/${meeting.id}`}
                 className="hover:text-[#008F83] transition-colors"
               >
-                {meeting.type} — {t(meeting.title)}
+                {displayTitle}
               </Link>
             </h2>
 
