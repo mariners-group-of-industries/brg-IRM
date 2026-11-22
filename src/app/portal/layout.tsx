@@ -144,7 +144,7 @@ export default async function PortalLayout({
             </div>
 
             {/* Center: Integrated Navigation Pills */}
-            <div className="hidden lg:flex items-center justify-center flex-1 max-w-xl">
+            <div className="hidden md:flex items-center justify-center flex-1 max-w-xl">
               <PortalNav />
             </div>
 
@@ -172,7 +172,7 @@ export default async function PortalLayout({
           </div>
 
           {/* Mobile Navigation bar */}
-          <div className="lg:hidden border-t border-slate-200/80 bg-white px-4 py-1.5 overflow-x-auto shadow-xs">
+          <div className="md:hidden border-t border-slate-200/80 bg-white px-4 py-1.5 overflow-x-auto shadow-xs [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <PortalNav />
           </div>
         </header>
